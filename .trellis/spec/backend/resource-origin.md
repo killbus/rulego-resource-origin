@@ -27,6 +27,8 @@ Relations are `Produce`, `Success`, and `Failure`. REST endpoints may use the
 - `commit` scans the issued staging tree and accepts only closed regular files.
 - A ready result includes entrypoint, sorted members, aggregate size,
   publication time, absolute expiry, and a URL below `staticUrlPrefix`.
+- Member inventories stay sorted, and membership checks use
+  `slices.BinarySearch` rather than a hand-written comparator.
 - Catalog and bytes live only below the configured owned root. A shared owner
   is referenced with `{"root":"ref://<owner-node-id>"}`.
 - Builds use only the digest-pinned SDK/runtime in `plugin-abi-release.json`.

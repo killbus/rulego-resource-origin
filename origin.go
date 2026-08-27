@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -347,7 +348,7 @@ func (m *originManager) Commit(request commitRequest) (resourceDescriptor, error
 	if err != nil {
 		return resourceDescriptor{}, &originError{Kind: "invalid_publication", Err: err}
 	}
-	if _, found := sort.Find(len(members), func(i int) int { return strings.Compare(members[i], entrypoint) }); !found {
+	if _, found := slices.BinarySearch(members, entrypoint); !found {
 		return resourceDescriptor{}, problem("invalid_publication", "entrypoint is not a staged regular file")
 	}
 	if size > m.maxResourceBytes || size > m.maxRetainedBytes-m.retainedBytes {
@@ -431,7 +432,7 @@ func (m *originManager) Resolve(resourceIDValue, memberValue string) (resourceDe
 		}
 	}
 	if member != "" && record.State == stateReady {
-		if _, found := sort.Find(len(record.Members), func(i int) int { return strings.Compare(record.Members[i], member) }); !found {
+		if _, found := slices.BinarySearch(record.Members, member); !found {
 			return resourceDescriptor{State: stateNotFound, ResourceID: resourceIDValue}, nil
 		}
 	}
@@ -635,9 +636,7 @@ func (m *originManager) reconcile() error {
 				continue
 			}
 			members, size, err := scanRegularFiles(filepath.Join(m.readyDir, record.ResourceID), record.MaxBytes)
-			_, entrypointFound := sort.Find(len(members), func(i int) int {
-				return strings.Compare(members[i], record.Entrypoint)
-			})
+			_, entrypointFound := slices.BinarySearch(members, record.Entrypoint)
 			if err != nil || size != record.Size || !equalStrings(members, record.Members) || !entrypointFound {
 				record.State = stateFailed
 				record.FailureKind = "invalid_persisted_resource"

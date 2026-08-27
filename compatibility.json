@@ -1,5 +1,5 @@
 {
-  "pluginVersion": "0.1.0",
+  "pluginVersion": "0.1.1",
   "pluginAbiRelease": "plugin-abi-release.json",
   "rulegoRelease": "v0.37.0"
 }

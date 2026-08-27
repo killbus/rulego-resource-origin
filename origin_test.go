@@ -92,6 +92,54 @@ func TestAcquireCommitSharesGeneration(t *testing.T) {
 	}
 }
 
+func TestMultiMemberPublicationSurvivesRestart(t *testing.T) {
+	root := t.TempDir()
+	config := managerConfig{
+		Root: root, StaticURLPrefix: "/resources", MaxRetainedBytes: 4096,
+		MaxResourceBytes: 2048, MaxTTL: time.Hour, MaxProduction: time.Minute,
+	}
+	m, err := newOriginManager(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	acquired, err := m.Acquire(context.Background(), request("multi-member"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{
+		"index.m3u8":     "playlist",
+		"segment-000.ts": "first",
+		"segment-001.ts": "second",
+	}
+	for name, payload := range files {
+		if err := os.WriteFile(filepath.Join(acquired.Descriptor.StagingDir, name), []byte(payload), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ready, err := m.Commit(commitRequest{acquired.Descriptor.ResourceID, acquired.Descriptor.Generation, "segment-001.ts"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := strings.Join(ready.Members, ","), "index.m3u8,segment-000.ts,segment-001.ts"; got != want {
+		t.Fatalf("members = %q, want %q", got, want)
+	}
+	if resolved, err := m.Resolve(ready.ResourceID, "segment-000.ts"); err != nil || resolved.State != stateReady {
+		t.Fatalf("resolve middle member = %#v, %v", resolved, err)
+	}
+	if err := m.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	m, err = newOriginManager(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer m.Close()
+	if resolved, err := m.Resolve(ready.ResourceID, "index.m3u8"); err != nil || resolved.State != stateReady {
+		t.Fatalf("entrypoint after restart = %#v, %v", resolved, err)
+	}
+}
+
 func TestResolvePendingDoesNotExposeProducerLease(t *testing.T) {
 	m := testManager(t, 4096, 2048)
 	acquired, err := m.Acquire(context.Background(), request("pending-resolve"))
