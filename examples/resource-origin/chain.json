@@ -1,0 +1,85 @@
+{
+  "ruleChain": {
+    "id": "resource-origin-contract",
+    "name": "Generic resource origin contract",
+    "root": true
+  },
+  "metadata": {
+    "firstNodeIndex": 1,
+    "endpoints": [
+      {
+        "id": "http",
+        "type": "endpoint/http",
+        "name": "Resource operation API",
+        "configuration": {
+          "server": ":8080",
+          "readTimeout": 30,
+          "writeTimeout": 600
+        },
+        "routers": [
+          {
+            "id": "origin-operation",
+            "params": ["POST"],
+            "from": {"path": "/resource"},
+            "to": {
+              "path": "resource-origin-contract:origin",
+              "wait": true,
+              "processors": ["resourceOriginResponse"]
+            }
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "id": "resource-origin-owner",
+        "type": "resourceOrigin",
+        "name": "Shared resource origin owner",
+        "configuration": {
+          "root": "./data/resource-origin",
+          "staticUrlPrefix": "/resources",
+          "maxRetainedBytes": 1073741824,
+          "maxResourceBytes": 268435456,
+          "maxTtlMs": 86400000,
+          "maxProductionMs": 600000
+        }
+      },
+      {
+        "id": "origin",
+        "type": "resourceOrigin",
+        "name": "Acquire or resolve through ref",
+        "configuration": {"root": "ref://resource-origin-owner"}
+      },
+      {
+        "id": "producer-contract",
+        "type": "comment",
+        "name": "Replace with a producer that writes and closes stagingDir/artifact.bin",
+        "configuration": {}
+      },
+      {
+        "id": "prepare-commit",
+        "type": "jsTransform",
+        "name": "Build commit request",
+        "configuration": {
+          "jsScript": "return {'msg':{'operation':'commit','resourceId':msg.resourceId,'generation':msg.generation,'entrypoint':'artifact.bin'},'metadata':metadata,'msgType':msgType};"
+        }
+      },
+      {
+        "id": "commit",
+        "type": "resourceOrigin",
+        "name": "Commit through the same ref",
+        "configuration": {"root": "ref://resource-origin-owner"}
+      },
+      {"id": "end", "type": "end", "name": "Resource outcome"}
+    ],
+    "connections": [
+      {"fromId": "origin", "toId": "producer-contract", "type": "Produce"},
+      {"fromId": "producer-contract", "toId": "prepare-commit", "type": "Success"},
+      {"fromId": "prepare-commit", "toId": "commit", "type": "Success"},
+      {"fromId": "origin", "toId": "end", "type": "Success"},
+      {"fromId": "origin", "toId": "end", "type": "Failure"},
+      {"fromId": "commit", "toId": "end", "type": "Success"},
+      {"fromId": "commit", "toId": "end", "type": "Failure"}
+    ]
+  }
+}

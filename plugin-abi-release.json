@@ -1,0 +1,7 @@
+{
+  "abi_id": "abi-d4fc741b72b9dba1573b61029d6deba9d17c8c22f2805546a5a92764b5c404bf",
+  "lock_digest": "sha256:5f9501666c46871d6acd84ab259f5ce72bf11ae2d566a51f649d2c6acd289c98",
+  "packaging_revision": "a498c9e29b0121e5495557ecc88c4a5df9150637",
+  "runtime": "ghcr.io/killbus/rulego-server@sha256:8594e773b9d0cf2afa1fd8af0744b9eea5a500006e8847c149ed36cc1fcb559a",
+  "sdk": "ghcr.io/killbus/rulego-plugin-sdk@sha256:be81ad63033a3fd51ec6897fe1f59bd90e96c601a409d206e9f85960fdd73a48"
+}
