@@ -136,3 +136,32 @@ node result without serving bytes:
 shows the generic `acquire → Produce → producer → commit` contract. Its comment
 node marks the only integration point a real producer must replace; it is not a
 working file producer by itself.
+
+## Cleanup and capacity
+
+Expiry retires the resource and releases its counted ready bytes once. The manager
+hides ready/<resourceId> in generation-specific trash, then removes retired trash
+and staging outside the publication lock. Cleanup failures remain queued even with
+no requests or live resources. Failed operations retry with exponential backoff
+from 1 second up to 60 seconds, in batches of at most 32 retired entries.
+Filesystem calls and other due work can delay an attempt beyond that interval.
+
+Once hiding succeeds, deletion continues even if catalog persistence fails, so
+catalog writes do not prevent trash from freeing space. Catalog retries cannot
+overwrite a newer generation. A failed hide reserves that identity against a new
+acquire (conflict); resolve returns expired without a URL. The host's static
+mapping can still read the old path until the filesystem permits hiding it.
+
+Sanitized cleanup failure/recovery samples go to the host logger, limited to one
+event per second per manager. The pending count covers queued generations, including
+catalog-only repairs; it is not a byte measurement. Startup reconciliation keeps
+catalog v1 compatibility and fails initialization if required cleanup fails.
+Close cancels scheduled retries and joins the worker; an in-flight filesystem
+call must return first.
+
+maxRetainedBytes limits committed ready payloads. Pending staging, residual trash,
+catalog records and filesystem overhead are outside that counter. There is no
+trash byte/count/age quota or hard total-disk guarantee. Catalog records remain
+after expiry. On Linux, open readers can retain allocated blocks after successful
+unlink until they close. Producers must stop writing after their lease ends; a
+late writer can recreate expired staging after successful cleanup.

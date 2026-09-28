@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, fix/trash-cleanup-recovery]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -127,6 +128,17 @@ jobs:
           test -s plugin/tmp/components.json || { docker logs "$container"; exit 1; }
           jq -e '.nodes | any(.type == "resourceOrigin")' plugin/tmp/components.json
           jq -e '.builtins.endpoints.outProcessors | index("resourceOriginResponse") != null' plugin/tmp/components.json
+      - name: Verify publication and native HTTP lifecycle
+        run: python3 plugin/tests/e2e-origin.py --plugin "plugin/dist/$PLUGIN_ARTIFACT"
+      - name: Preserve runtime integration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: origin-http-${{ matrix.arch }}
+          path: |
+            plugin/tmp/origin-http-*/receipt.json
+            plugin/tmp/origin-http-*/runtime.log
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: plugin-linux-${{ matrix.arch }}
