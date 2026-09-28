@@ -37,8 +37,14 @@ jobs:
         with:
           run-id: ${{ inputs.ci_run_id }}
           github-token: ${{ github.token }}
-          pattern: '*'
+          pattern: 'plugin-linux-*'
           merge-multiple: true
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.ci_run_id }}
+          github-token: ${{ github.token }}
+          name: release-metadata
           path: dist
       - name: Verify checksums
         working-directory: dist

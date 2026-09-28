@@ -49,6 +49,10 @@ Relations are `Produce`, `Success`, and `Failure`. REST endpoints may use the
   implied. Linux readers can retain blocks after unlink. Late producers can
   recreate old staging; producer cancellation is external.
 - Builds use only the digest-pinned SDK/runtime in `plugin-abi-release.json`.
+- Releases reuse a successful CI run at the exact tagged commit. Download
+  only `plugin-linux-*` and `release-metadata` for publication; keep
+  `origin-http-*` receipts and runtime logs as CI evidence. Wildcard downloads
+  would mix diagnostic directories into the release asset upload.
 
 ## 4. Validation & Error Matrix
 
