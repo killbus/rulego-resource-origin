@@ -1,0 +1,65 @@
+{
+  "candidateCommit": "a1d33cec0c69b221e1ae6aaff25ff75c3912bce3",
+  "runId": 36431435634,
+  "runUrl": "https://github.com/killbus/rulego-resource-origin/actions/runs/36431435634",
+  "conclusion": "success",
+  "release": {
+    "abi_id": "abi-d4fc741b72b9dba1573b61029d6deba9d17c8c22f2805546a5a92764b5c404bf",
+    "lock_digest": "sha256:5f9501666c46871d6acd84ab259f5ce72bf11ae2d566a51f649d2c6acd289c98",
+    "packaging_revision": "a498c9e29b0121e5495557ecc88c4a5df9150637",
+    "runtime": "ghcr.io/killbus/rulego-server@sha256:8594e773b9d0cf2afa1fd8af0744b9eea5a500006e8847c149ed36cc1fcb559a",
+    "sdk": "ghcr.io/killbus/rulego-plugin-sdk@sha256:be81ad63033a3fd51ec6897fe1f59bd90e96c601a409d206e9f85960fdd73a48"
+  },
+  "platforms": {
+    "amd64": {
+      "file": "resource-origin-rulego-v0.1.1-linux-amd64.so",
+      "bytes": 13185928,
+      "sha256": "ac34a24c066e999ffb6a1dccc6ca370e34ab13cfc39b9bd0b0aede6675e4824e",
+      "abiSidecar": {
+        "abi_id": "abi-d4fc741b72b9dba1573b61029d6deba9d17c8c22f2805546a5a92764b5c404bf",
+        "platform": "linux/amd64",
+        "lock_digest": "sha256:5f9501666c46871d6acd84ab259f5ce72bf11ae2d566a51f649d2c6acd289c98",
+        "plugin_sha256": "ac34a24c066e999ffb6a1dccc6ca370e34ab13cfc39b9bd0b0aede6675e4824e"
+      },
+      "receipt": {
+        "runtime": "ghcr.io/killbus/rulego-server@sha256:8594e773b9d0cf2afa1fd8af0744b9eea5a500006e8847c149ed36cc1fcb559a",
+        "platform": "linux/amd64",
+        "pluginSha256": "ac34a24c066e999ffb6a1dccc6ca370e34ab13cfc39b9bd0b0aede6675e4824e",
+        "checks": [
+          "202/307/404/410",
+          "GET/206/416/304",
+          "parent-child expiry",
+          "autonomous expiry",
+          "trash removal",
+          "restart preservation"
+        ]
+      },
+      "runtimeLogSha256": "b03bb898532c3498227ddbdadd558c299f27105565d02623528bb747aabc59a1"
+    },
+    "arm64": {
+      "file": "resource-origin-rulego-v0.1.1-linux-arm64.so",
+      "bytes": 13084740,
+      "sha256": "9f66e658df4bc518f71683b98db1c1d730f406b8ddb7086a65fb2d9cab572db7",
+      "abiSidecar": {
+        "abi_id": "abi-d4fc741b72b9dba1573b61029d6deba9d17c8c22f2805546a5a92764b5c404bf",
+        "platform": "linux/arm64",
+        "lock_digest": "sha256:5f9501666c46871d6acd84ab259f5ce72bf11ae2d566a51f649d2c6acd289c98",
+        "plugin_sha256": "9f66e658df4bc518f71683b98db1c1d730f406b8ddb7086a65fb2d9cab572db7"
+      },
+      "receipt": {
+        "runtime": "ghcr.io/killbus/rulego-server@sha256:8594e773b9d0cf2afa1fd8af0744b9eea5a500006e8847c149ed36cc1fcb559a",
+        "platform": "linux/arm64",
+        "pluginSha256": "9f66e658df4bc518f71683b98db1c1d730f406b8ddb7086a65fb2d9cab572db7",
+        "checks": [
+          "202/307/404/410",
+          "GET/206/416/304",
+          "parent-child expiry",
+          "autonomous expiry",
+          "trash removal",
+          "restart preservation"
+        ]
+      },
+      "runtimeLogSha256": "b03bb898532c3498227ddbdadd558c299f27105565d02623528bb747aabc59a1"
+    }
+  }
+}

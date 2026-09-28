@@ -1,0 +1,41 @@
+{
+  "id": "trash-cleanup-recovery",
+  "name": "trash-cleanup-recovery",
+  "title": "Assess and repair trash cleanup recovery",
+  "description": "Assess production trash lifecycle and plan reliable runtime cleanup retries, failure recovery, and explicit capacity accounting semantics.",
+  "status": "completed",
+  "dev_type": "backend",
+  "scope": "resource-origin",
+  "package": null,
+  "priority": "P1",
+  "creator": "killbus",
+  "assignee": "killbus",
+  "createdAt": "2026-09-28",
+  "completedAt": "2026-09-28",
+  "branch": "fix/trash-cleanup-recovery",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "a1d33cec0c69b221e1ae6aaff25ff75c3912bce3",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "origin.go",
+    "origin_test.go",
+    "node.go",
+    "node_test.go",
+    "README.md",
+    ".trellis/spec/backend/resource-origin.md",
+    ".github/workflows/ci.yml",
+    "cleanup.go",
+    "cleanup_test.go",
+    "tests/e2e-origin.py"
+  ],
+  "notes": "2026-09-28: Repair and A1-A7 complete for a1d33ce. Explicit authorization covers branch push and Linux dual-architecture CI only. CI 36431435634 passed; downloaded plugin SHA-256, ABI/lock/platform, pinned runtime and HTTP lifecycle receipts verified. No new quota. Production export read-only. PR, merge, release and deployment not performed.",
+  "meta": {
+    "ci_run_url": "https://github.com/killbus/rulego-resource-origin/actions/runs/36431435634",
+    "validated_implementation_commit": "a1d33cec0c69b221e1ae6aaff25ff75c3912bce3",
+    "remote_authorization": "Push fix/trash-cleanup-recovery and follow Linux dual-architecture CI; no PR, merge, release or production changes."
+  }
+}

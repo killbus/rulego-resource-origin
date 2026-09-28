@@ -1,6 +1,6 @@
 # Integration validation boundary
 
-The existing CI only smoke-loads the plugin. A7 also requires publication,
+The baseline CI only smoke-loaded the plugin. A7 also requires publication,
 native static HTTP, expiry and restart verification. tests/e2e-origin.py adds a
 small disposable-runtime harness using the candidate .so and matching pinned
 runtime; .github/workflows/ci.yml executes it on the existing native amd64 and
@@ -21,5 +21,7 @@ workflow also supports manual dispatch once that definition is on the default
 branch. Neither workflow modification executes remote CI without a push.
 
 This Windows host does not have docker on PATH. Python command-line parsing
-has been checked locally. The full harness and Linux ABI gates have NOT been
-run; those remain acceptance requirements for a candidate branch commit.
+was checked locally. After explicit push/CI authorization, the full harness and
+Linux ABI gates passed on both native architectures in CI run 36431435634 for
+a1d33ce. Downloaded plugin bytes, sidecars, runtime receipts and release identities
+were cross-checked. See acceptance-evidence.md and ci-artifacts.json.

@@ -8,7 +8,7 @@ and which do not bound physical disk use.
 
 The user requested a Trellis assessment or repair task after a read-only review of
 an exported production pipeline and subsequently approved the concrete repair
-scope. The task is in progress on fix/trash-cleanup-recovery.
+scope. Implementation and A1-A7 validation are complete on fix/trash-cleanup-recovery.
 
 ## Background
 
@@ -75,14 +75,16 @@ line anchors are consolidated in research/assessment.md.
 - [x] A6 (R3, R6): Restart cleanup, parent/child expiry, pending timeout, strict
   decode, waiter binding, path confinement, and protected unrelated/new-generation
   files pass regression tests; any changed catalog format has backward tests.
-- [ ] A7 (R6): Formatting, go vet, unit and race tests, both architecture plugin
+- [x] A7 (R6): Formatting, go vet, unit and race tests, both architecture plugin
   builds, sidecar verification, matching-runtime load checks, and applicable
   publication/HTTP integration pass for the final implementation commit.
 
 ## Out of Scope
 
 - Editing the production export, node pool, deployed filesystem, or runtime.
-- Automatic production deletion, restart, deployment, release, or remote changes.
+- Automatic production deletion, restart, deployment, PR creation, merge or release.
+- Remote changes other than the explicitly authorized fix/trash-cleanup-recovery
+  branch push and Linux dual-architecture CI follow-up.
 - New total-disk quotas, staging reservations, LRU eviction, or configurable trash
   age/byte/count thresholds in this repair.
 - Catalog tombstone compaction and a general metrics service.
@@ -92,6 +94,9 @@ line anchors are consolidated in research/assessment.md.
 
 The assessment is complete at source level; no production incident is claimed.
 The user approved the repair scope and task.py start has been run. Implementation
-and deterministic recovery tests are complete locally. See research/acceptance-evidence.md for review and validation status. Linux CI/runtime gates remain open. Fault injection establishes
+and deterministic recovery tests are complete. The user subsequently authorized
+branch push and Linux dual-architecture CI. Run 36431435634 passed for a1d33ce;
+both downloaded plugin artifacts, sidecars and runtime receipts were verified.
+See research/acceptance-evidence.md and research/ci-artifacts.json. A1-A7 are closed. Fault injection establishes
 behavior after an explicit failing operation; it does not establish that normal
 playback causes that operation to fail or predict a calendar time of failure.

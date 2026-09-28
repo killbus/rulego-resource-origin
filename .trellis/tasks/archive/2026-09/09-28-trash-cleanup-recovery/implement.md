@@ -1,4 +1,4 @@
-# Execution plan — local validation in progress
+# Execution plan — implementation and validation complete
 
 ## Planning handoff
 
@@ -63,9 +63,9 @@ ready media and owned-root/catalog readability; no recursive production deletion
 - User approval received; task started by main session.
 - Branch: fix/trash-cleanup-recovery; baseline: 2489c730cddfe36eca043e61c667878d4421ffef.
 - Transaction ordering recorded in design.md before implementation.
-- Local implementation and deterministic fault tests complete. Independent review found one fixture listener conflict, corrected to borrow ref://:9090. Final verification is recorded in research/acceptance-evidence.md; Linux CI/runtime gates remain open.
+- Local implementation and deterministic fault tests complete. Independent review found one fixture listener conflict, corrected to borrow ref://:9090. Final verification is recorded in research/acceptance-evidence.md; Linux CI/runtime gates passed for a1d33ce in run 36431435634; downloaded artifacts and receipts verified.
 
 Main integrated the worker recovery tests, consolidated overlapping catalog
 failure coverage, and extended the restart matrix to catalog rename failure.
 Main owns CI, documentation integration and the disposable runtime harness. Local verification and independent review are recorded separately
-in research/acceptance-evidence.md; Linux CI/ABI/runtime gates remain required.
+in research/acceptance-evidence.md; Linux CI/ABI/runtime gates are complete. The user explicitly authorized the branch push and CI follow-up; PR, merge and release remain separate.
