@@ -80,6 +80,7 @@ func (n *resourceOriginNode) Init(ruleConfig types.Config, configuration types.C
 				MaxResourceBytes: n.Config.MaxResourceBytes,
 				MaxTTL:           time.Duration(n.Config.MaxTTLms) * time.Millisecond,
 				MaxProduction:    time.Duration(n.Config.MaxProductionMs) * time.Millisecond,
+				Diagnostic:       cleanupLogger(ruleConfig.Logger),
 			})
 		},
 		func(manager *originManager) error { return manager.Close() }); err != nil {
@@ -139,6 +140,20 @@ func (n *resourceOriginNode) OnMsg(ruleContext types.RuleContext, msg types.Rule
 }
 
 func (n *resourceOriginNode) Destroy() { _ = n.SharedNode.Close() }
+
+func cleanupLogger(logger types.Logger) func(cleanupEvent) {
+	if logger == nil {
+		return nil
+	}
+	return func(event cleanupEvent) {
+		log := logger.Warnf
+		if event.Recovered {
+			log = logger.Infof
+		}
+		log("resourceOrigin cleanup operation=%s resource=%s generation=%s class=%s failures=%d pending=%d recovered=%t",
+			event.Operation, event.ResourceID, event.Generation, event.ErrorClass, event.Attempts, event.Pending, event.Recovered)
+	}
+}
 
 type acquirePayload struct {
 	Operation           string `json:"operation"`

@@ -40,6 +40,8 @@ type managerConfig struct {
 	MaxResourceBytes int64
 	MaxTTL           time.Duration
 	MaxProduction    time.Duration
+	Diagnostic       func(cleanupEvent)
+	hooks            *cleanupHooks
 }
 
 type acquireRequest struct {
@@ -85,6 +87,7 @@ type acquireResult struct {
 }
 
 type originRecord struct {
+	counted          bool
 	Version          int           `json:"version"`
 	ResourceID       string        `json:"resourceId"`
 	ParentResourceID string        `json:"parentResourceId,omitempty"`
@@ -135,6 +138,11 @@ type originManager struct {
 	done             chan struct{}
 	closeOnce        sync.Once
 	now              func() time.Time
+	garbage          map[string]*cleanupWork
+	hooks            cleanupHooks
+	diagnostic       func(cleanupEvent)
+	nextDiagnostic   time.Time
+	cleanupEvents    []cleanupEvent
 }
 
 type publicationWaiter struct {
@@ -181,7 +189,14 @@ func newOriginManager(config managerConfig) (*originManager, error) {
 		stop:             make(chan struct{}),
 		done:             make(chan struct{}),
 		now:              time.Now,
+		garbage:          make(map[string]*cleanupWork),
+		hooks:            defaultCleanupHooks(),
+		diagnostic:       config.Diagnostic,
 	}
+	if config.hooks != nil {
+		m.hooks = *config.hooks
+	}
+	m.now = m.hooks.now
 	for _, dir := range []string{m.catalogDir, m.stagingDir, m.readyDir, m.trashDir} {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
 			return nil, fmt.Errorf("create origin directory: %w", err)
@@ -246,10 +261,7 @@ func (m *originManager) Acquire(ctx context.Context, request acquireRequest) (ac
 				return acquireResult{}, problem("conflict", "resource identity is active with different publication limits")
 			}
 			if record.State == stateReady && !now.Before(record.ExpiresAt) {
-				if err := m.expireLocked(record, now); err != nil {
-					m.mu.Unlock()
-					return acquireResult{}, err
-				}
+				_ = m.expireLocked(record, now)
 			}
 			if record.State == statePending && !now.Before(record.PublishBy) {
 				if err := m.failLocked(record, "production_timeout"); err != nil {
@@ -278,6 +290,10 @@ func (m *originManager) Acquire(ctx context.Context, request acquireRequest) (ac
 			case stateFailed, stateExpired:
 			}
 		}
+		if m.readyReservedLocked(id) {
+			m.mu.Unlock()
+			return acquireResult{}, problem("conflict", "retired ready path awaits cleanup")
+		}
 		if err := m.validateParentLocked(request.ParentResourceID, now); err != nil {
 			m.mu.Unlock()
 			return acquireResult{}, err
@@ -305,7 +321,7 @@ func (m *originManager) Acquire(ctx context.Context, request acquireRequest) (ac
 			PublishBy:        now.Add(request.ProductionTimeout),
 		}
 		if err := m.persistLocked(record); err != nil {
-			_ = os.RemoveAll(filepath.Join(m.stagingDir, id))
+			m.queueCleanupLocked(record, false, false)
 			m.mu.Unlock()
 			return acquireResult{}, err
 		}
@@ -336,9 +352,7 @@ func (m *originManager) Commit(request commitRequest) (resourceDescriptor, error
 		}
 		return resourceDescriptor{}, problem("production_timeout", "production deadline passed")
 	}
-	if err := m.sweepLocked(now); err != nil {
-		return resourceDescriptor{}, err
-	}
+	_ = m.sweepLocked(now)
 	if err := m.validateParentLocked(record.ParentResourceID, now); err != nil {
 		_ = m.failLocked(record, "parent_unavailable")
 		return resourceDescriptor{}, err
@@ -360,7 +374,7 @@ func (m *originManager) Commit(request commitRequest) (resourceDescriptor, error
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return resourceDescriptor{}, fmt.Errorf("inspect ready path: %w", err)
 	}
-	if err := os.Rename(staging, ready); err != nil {
+	if err := m.hooks.rename(staging, ready); err != nil {
 		return resourceDescriptor{}, fmt.Errorf("publish resource: %w", err)
 	}
 	previous := *record
@@ -376,10 +390,19 @@ func (m *originManager) Commit(request commitRequest) (resourceDescriptor, error
 	record.FailureKind = ""
 	if err := m.persistLocked(record); err != nil {
 		*record = previous
-		_ = os.Rename(ready, staging)
+		if rollbackErr := m.hooks.rename(ready, staging); rollbackErr != nil {
+			// Failed publication cannot leave an untracked ready tree that a
+			// later generation might overwrite. Retire it and reserve its ID.
+			record.State = stateFailed
+			record.FailureKind = "publication_failed"
+			work := m.queueCleanupLocked(record, true, true)
+			_ = m.prepareCleanupLocked(work)
+			m.notifyLocked(record)
+		}
 		return resourceDescriptor{}, err
 	}
 	m.retainedBytes += size
+	record.counted = true
 	_ = os.Remove(filepath.Dir(staging))
 	m.notifyLocked(record)
 	m.signal()
@@ -422,9 +445,7 @@ func (m *originManager) Resolve(resourceIDValue, memberValue string) (resourceDe
 	}
 	now := m.now().UTC()
 	if record.State == stateReady && !now.Before(record.ExpiresAt) {
-		if err := m.expireLocked(record, now); err != nil {
-			return resourceDescriptor{}, err
-		}
+		_ = m.expireLocked(record, now)
 	}
 	if record.State == statePending && !now.Before(record.PublishBy) {
 		if err := m.failLocked(record, "production_timeout"); err != nil {
@@ -460,9 +481,7 @@ func (m *originManager) validateParentLocked(parentID string, now time.Time) err
 		return problem("parent_unavailable", "parent resource not found")
 	}
 	if parent.State == stateReady && !now.Before(parent.ExpiresAt) {
-		if err := m.expireLocked(parent, now); err != nil {
-			return err
-		}
+		_ = m.expireLocked(parent, now)
 	}
 	if parent.State != stateReady {
 		return problem("parent_unavailable", "parent resource is not ready")
@@ -516,7 +535,6 @@ func (m *originManager) memberURL(resourceIDValue, member string) string {
 }
 
 func (m *originManager) failLocked(record *originRecord, kind string) error {
-	previous := *record
 	record.State = stateFailed
 	record.FailureKind = kind
 	record.Entrypoint = ""
@@ -524,37 +542,25 @@ func (m *originManager) failLocked(record *originRecord, kind string) error {
 	record.Size = 0
 	record.PublishedAt = time.Time{}
 	record.ExpiresAt = time.Time{}
-	if err := m.persistLocked(record); err != nil {
-		*record = previous
-		return err
-	}
-	_ = os.RemoveAll(filepath.Join(m.stagingDir, record.ResourceID))
+	work := m.queueCleanupLocked(record, false, true)
+	err := m.prepareCleanupLocked(work)
 	m.notifyLocked(record)
-	return nil
+	return err
 }
 
 func (m *originManager) expireLocked(record *originRecord, now time.Time) error {
 	if record.State != stateReady {
 		return nil
 	}
-	ready := filepath.Join(m.readyDir, record.ResourceID)
-	trash := filepath.Join(m.trashDir, record.ResourceID+"-"+record.Generation)
-	_ = os.RemoveAll(trash)
-	if err := os.Rename(ready, trash); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("hide expired resource: %w", err)
-	}
-	m.retainedBytes -= record.Size
-	if m.retainedBytes < 0 {
-		m.retainedBytes = 0
+	if record.counted {
+		m.retainedBytes -= record.Size
+		record.counted = false
 	}
 	record.State = stateExpired
 	record.FailureKind = ""
 	record.ExpiresAt = now
-	if err := m.persistLocked(record); err != nil {
-		return err
-	}
-	_ = os.RemoveAll(trash)
-	return nil
+	work := m.queueCleanupLocked(record, true, true)
+	return m.prepareCleanupLocked(work)
 }
 
 func (m *originManager) notifyLocked(record *originRecord) {
@@ -578,7 +584,7 @@ func (m *originManager) persistLocked(record *originRecord) error {
 	name := temporary.Name()
 	defer os.Remove(name)
 	if err = temporary.Chmod(0o600); err == nil {
-		_, err = temporary.Write(payload)
+		err = m.hooks.writeCatalog(temporary, payload)
 	}
 	if err == nil {
 		err = temporary.Sync()
@@ -590,7 +596,7 @@ func (m *originManager) persistLocked(record *originRecord) error {
 	if err != nil {
 		return fmt.Errorf("write catalog record: %w", err)
 	}
-	if err := os.Rename(name, filepath.Join(m.catalogDir, record.ResourceID+".json")); err != nil {
+	if err := m.hooks.rename(name, filepath.Join(m.catalogDir, record.ResourceID+".json")); err != nil {
 		return fmt.Errorf("publish catalog record: %w", err)
 	}
 	return nil
@@ -614,7 +620,8 @@ func (m *originManager) reconcile() error {
 		}
 		var record originRecord
 		if err := json.Unmarshal(payload, &record); err != nil || record.Version != catalogVersion ||
-			record.ResourceID+".json" != entry.Name() || !validHex(record.ResourceID, sha256.Size*2) {
+			record.ResourceID+".json" != entry.Name() || !validHex(record.ResourceID, sha256.Size*2) ||
+			!validHex(record.Generation, 32) {
 			return problem("invalid_catalog", "catalog contains an invalid record")
 		}
 		copyRecord := record
@@ -645,16 +652,22 @@ func (m *originManager) reconcile() error {
 				record.Size = 0
 				record.PublishedAt = time.Time{}
 				record.ExpiresAt = time.Time{}
-				_ = os.RemoveAll(filepath.Join(m.readyDir, record.ResourceID))
+				if err := m.hooks.removeAll(filepath.Join(m.readyDir, record.ResourceID)); err != nil {
+					return err
+				}
 				if err := m.persistLocked(record); err != nil {
 					return err
 				}
 				continue
 			}
 			m.retainedBytes += size
+			record.counted = true
 		case stateFailed, stateExpired:
-			_ = os.RemoveAll(filepath.Join(m.stagingDir, record.ResourceID))
-			_ = os.RemoveAll(filepath.Join(m.readyDir, record.ResourceID))
+			for _, dir := range []string{m.stagingDir, m.readyDir} {
+				if err := m.hooks.removeAll(filepath.Join(dir, record.ResourceID)); err != nil {
+					return err
+				}
+			}
 		default:
 			return problem("invalid_catalog", "catalog contains an unknown state")
 		}
@@ -673,10 +686,11 @@ func (m *originManager) reconcile() error {
 		return fmt.Errorf("read trash directory: %w", err)
 	}
 	for _, entry := range trashEntries {
-		if err := os.RemoveAll(filepath.Join(m.trashDir, entry.Name())); err != nil {
+		if err := m.hooks.removeAll(filepath.Join(m.trashDir, entry.Name())); err != nil {
 			return fmt.Errorf("remove abandoned trash entry: %w", err)
 		}
 	}
+	clear(m.garbage) // Startup has synchronously removed all owned residue.
 	return nil
 }
 
@@ -688,7 +702,7 @@ func (m *originManager) removeOrphanDirectories(root string, state resourceState
 	for _, entry := range entries {
 		record := m.records[entry.Name()]
 		if !entry.IsDir() || record == nil || record.State != state {
-			if err := os.RemoveAll(filepath.Join(root, entry.Name())); err != nil {
+			if err := m.hooks.removeAll(filepath.Join(root, entry.Name())); err != nil {
 				return err
 			}
 		}
@@ -706,6 +720,15 @@ func (m *originManager) signal() {
 func (m *originManager) expiryLoop() {
 	defer close(m.done)
 	for {
+		select {
+		case <-m.stop:
+			return
+		default:
+		}
+		m.sweep()
+		m.emitCleanupEvents()
+		m.cleanupBatch()
+		m.emitCleanupEvents()
 		m.mu.Lock()
 		var next time.Time
 		for _, record := range m.records {
@@ -720,23 +743,30 @@ func (m *originManager) expiryLoop() {
 				next = deadline
 			}
 		}
+		for _, work := range m.garbage {
+			if next.IsZero() || work.deadline().Before(next) {
+				next = work.deadline()
+			}
+		}
+		now := m.now().UTC()
 		m.mu.Unlock()
 		var timer <-chan time.Time
+		cancel := func() {}
 		if !next.IsZero() {
-			delay := time.Until(next)
+			delay := next.Sub(now)
 			if delay < 0 {
 				delay = 0
 			}
-			timer = time.After(delay)
+			timer, cancel = m.hooks.newTimer(delay)
 		}
 		select {
 		case <-m.stop:
+			cancel()
 			return
 		case <-m.wake:
-			continue
 		case <-timer:
-			m.sweep()
 		}
+		cancel()
 	}
 }
 
@@ -747,19 +777,24 @@ func (m *originManager) sweep() {
 }
 
 func (m *originManager) sweepLocked(now time.Time) error {
+	var firstErr error
 	for _, record := range m.records {
 		if record.State == statePending && !now.Before(record.PublishBy) {
 			if err := m.failLocked(record, "production_timeout"); err != nil {
-				return err
+				if firstErr == nil {
+					firstErr = err
+				}
 			}
 		}
 		if record.State == stateReady && !now.Before(record.ExpiresAt) {
 			if err := m.expireLocked(record, now); err != nil {
-				return err
+				if firstErr == nil {
+					firstErr = err
+				}
 			}
 		}
 	}
-	return nil
+	return firstErr
 }
 
 func ensureOwnedRoot(root string) error {
