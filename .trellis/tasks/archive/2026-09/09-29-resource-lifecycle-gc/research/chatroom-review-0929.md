@@ -36,4 +36,3 @@ Simulated expert chatroom (dbs-chatroom) on the planning artifacts at HEAD b22d4
 
 ## Judge synthesis
 Convergent fixes across Lamport/Shapiro/Remzi: quarantine-claim reconciliation with single-flight, reservation accounting, crash-boundary enumeration, Linux-authoritative failpoint tests. Gregg and Popper both demand measurement-first and a clean-baseline evidence gate. Unresolved product decisions remain: TTL semantics (blocked on user), startup failure policy, and measurement environment.
-
