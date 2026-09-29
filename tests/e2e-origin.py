@@ -234,11 +234,28 @@ def main():
             time.sleep(0.1)
         else:
             raise AssertionError('healthy expiry left trash entries')
+        # Process-crash evidence on the pinned runtime: SIGKILL skips every
+        # shutdown path, so startup reconcile must recover the same persisted
+        # root. The graceful restart above cannot establish this.
+        docker('kill', '--signal', 'KILL', name)
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if not json.loads(docker('inspect', name))[0]['State']['Running']:
+                break
+            time.sleep(0.1)
+        else:
+            raise AssertionError('container kept running after SIGKILL')
+        docker('start', name)
+        wait_ready()
+        resolved, _ = operation(307, operation='resolve', resourceId=stable['resourceId'])
+        assert resolved['url'] == location
+        assert request('GET', location)[2] == payload
         receipt = {'runtime': runtime, 'platform': platform, 'pluginSha256': digest,
                    'observedTerminalStatuses': sorted(terminal_statuses),
                    'checks': ['202/307/404', 'GET/206/416/304', 'parent-child expiry',
                               'terminal GC to 404', 'terminal catalog removal',
-                              'autonomous expiry', 'trash removal', 'restart preservation']}
+                              'autonomous expiry', 'trash removal', 'restart preservation',
+                              'process-kill restart preservation']}
         (work / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
         print(json.dumps(receipt, indent=2))
     finally:

@@ -126,6 +126,7 @@ func (m *originManager) scanResidueBatch() {
 	}()
 	if err := m.checkManagedPaths(); err != nil {
 		m.closeResidueCursors()
+		m.scanErrors[index] = diagnostic
 		m.cleanupFailedLocked(diagnostic, "scan_paths", err)
 		return
 	}
@@ -134,6 +135,7 @@ func (m *originManager) scanResidueBatch() {
 		c.failed = false
 		f, err := os.Open(roots[index])
 		if err != nil {
+			m.scanErrors[index] = diagnostic
 			m.cleanupFailedLocked(diagnostic, "scan", err)
 			return
 		}
@@ -147,6 +149,7 @@ func (m *originManager) scanResidueBatch() {
 		entries, err := f.Readdirnames(1)
 		if len(entries) == 0 {
 			if err != nil && err != io.EOF {
+				m.scanErrors[index] = diagnostic
 				m.cleanupFailedLocked(diagnostic, "scan", err)
 			}
 			if c.child != nil {
@@ -181,6 +184,7 @@ func (m *originManager) scanResidueBatch() {
 			if info.IsDir() && info.Mode()&os.ModeSymlink == 0 {
 				child, err := os.Open(path)
 				if err != nil {
+					m.scanErrors[index] = diagnostic
 					m.cleanupFailedLocked(diagnostic, "scan", err)
 					continue
 				}
@@ -212,6 +216,7 @@ func (m *originManager) scanResidueBatch() {
 			continue
 		}
 		if err := m.claimResidueLocked(path); err != nil {
+			m.scanErrors[index] = diagnostic
 			m.cleanupFailedLocked(diagnostic, "claim", err)
 		}
 	}

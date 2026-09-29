@@ -42,6 +42,9 @@ Relations are `Produce`, `Success`, and `Failure`. REST endpoints may use the
 - Failure/recovery log samples contain sanitized IDs, operation, error class,
   failure count and pending work count. Emit at most one event/second/manager,
   outside the mutex. Pending includes catalog-only work, not a trash byte measure.
+  Register scan failures before emitting their first event so Pending includes
+  the failed root. Clear recovered scan backlog after a successful full pass;
+  stale diagnostics must not retain pending counts or oldest-wait age forever.
 - Startup remains fail-fast on cleanup errors and reads catalog v1. Close cancels
   timers and joins the worker, waiting for any in-flight filesystem syscall.
 - A root has one manager owner; there is no cross-process locking. Close joins
@@ -135,6 +138,10 @@ Relations are `Produce`, `Success`, and `Failure`. REST endpoints may use the
   unlink, restart, and assert residue reclamation and new-generation safety. Disk
   fixtures alone do not establish process-crash behavior. Preserve actual Linux
   runtime/race receipts and compare publication latency on the same workload.
+- Deterministic manual-cleanup fixtures must join the worker before driving
+  batches and explicitly close any cursors reopened after Close. Do not run
+  manual cleanupBatch concurrently with the live worker. Runtime receipts must
+  distinguish graceful restart from SIGKILL followed by startup and native GET.
 
 ## 7. Wrong vs Correct
 
