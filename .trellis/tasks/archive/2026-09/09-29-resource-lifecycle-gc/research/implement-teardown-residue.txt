@@ -1,0 +1,8 @@
+D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestCleanupRestartAtRetirementBoundariespartial_delete209600830\001
+D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestCleanupRestartAtRetirementBoundariespartial_delete209600830\001\catalog
+D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestCleanupSlowDeleteAllowsPublicationAndCloseJoins4070315630\001
+D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestCleanupSlowDeleteAllowsPublicationAndCloseJoins4070315630\001\catalog
+D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestFailedGenerationWaiterDoesNotJoinRetry4029987044\001
+D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestFailedGenerationWaiterDoesNotJoinRetry4029987044\001\catalog
+D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestIndependentCatalogTempPersistBarrier1299946250\001
+D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestIndependentCatalogTempPersistBarrier1299946250\001\catalog

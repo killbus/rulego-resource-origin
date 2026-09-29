@@ -1,0 +1,20 @@
+=== RUN   TestLifecycleStartupCatalogClassification
+=== RUN   TestLifecycleStartupCatalogClassification/unknown_file
+=== RUN   TestLifecycleStartupCatalogClassification/unknown_dir
+=== RUN   TestLifecycleStartupCatalogClassification/id_dir
+=== RUN   TestLifecycleStartupCatalogClassification/corrupt_record
+=== RUN   TestLifecycleStartupCatalogClassification/record_link
+=== RUN   TestLifecycleStartupCatalogClassification/unknown_link
+--- PASS: TestLifecycleStartupCatalogClassification (0.11s)
+    --- PASS: TestLifecycleStartupCatalogClassification/unknown_file (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/unknown_dir (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/id_dir (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/corrupt_record (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/record_link (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/unknown_link (0.02s)
+=== RUN   TestLifecycleRejectsLinkedAncestorBeforeCreation
+--- PASS: TestLifecycleRejectsLinkedAncestorBeforeCreation (0.01s)
+=== RUN   TestLifecycleScanFailureBackoffAcrossPasses
+--- PASS: TestLifecycleScanFailureBackoffAcrossPasses (0.02s)
+PASS
+ok  	github.com/killbus/rulego-resource-origin	2.069s

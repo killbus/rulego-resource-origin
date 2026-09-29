@@ -1,0 +1,183 @@
+=== RUN   TestCleanupRetriesWithoutLiveRecordsOrTraffic
+--- PASS: TestCleanupRetriesWithoutLiveRecordsOrTraffic (0.06s)
+=== RUN   TestCleanupPartialDeletionAndNewGeneration
+--- PASS: TestCleanupPartialDeletionAndNewGeneration (0.07s)
+=== RUN   TestCleanupRenameFailureReservesOnlyItsIdentity
+--- PASS: TestCleanupRenameFailureReservesOnlyItsIdentity (0.08s)
+=== RUN   TestCleanupCatalogFailureRecoveryAndSupersession
+=== RUN   TestCleanupCatalogFailureRecoveryAndSupersession/write/supersede=false
+=== RUN   TestCleanupCatalogFailureRecoveryAndSupersession/write/supersede=true
+=== RUN   TestCleanupCatalogFailureRecoveryAndSupersession/rename/supersede=false
+=== RUN   TestCleanupCatalogFailureRecoveryAndSupersession/rename/supersede=true
+--- PASS: TestCleanupCatalogFailureRecoveryAndSupersession (0.21s)
+    --- PASS: TestCleanupCatalogFailureRecoveryAndSupersession/write/supersede=false (0.05s)
+    --- PASS: TestCleanupCatalogFailureRecoveryAndSupersession/write/supersede=true (0.06s)
+    --- PASS: TestCleanupCatalogFailureRecoveryAndSupersession/rename/supersede=false (0.04s)
+    --- PASS: TestCleanupCatalogFailureRecoveryAndSupersession/rename/supersede=true (0.06s)
+=== RUN   TestCleanupDeletionDoesNotWaitForCatalogRecovery
+=== RUN   TestCleanupDeletionDoesNotWaitForCatalogRecovery/write
+=== RUN   TestCleanupDeletionDoesNotWaitForCatalogRecovery/rename
+--- PASS: TestCleanupDeletionDoesNotWaitForCatalogRecovery (0.09s)
+    --- PASS: TestCleanupDeletionDoesNotWaitForCatalogRecovery/write (0.05s)
+    --- PASS: TestCleanupDeletionDoesNotWaitForCatalogRecovery/rename (0.05s)
+=== RUN   TestCleanupBackoffBatchFairnessAndDiagnostics
+--- PASS: TestCleanupBackoffBatchFairnessAndDiagnostics (0.92s)
+=== RUN   TestCleanupRestartAtRetirementBoundaries
+=== RUN   TestCleanupRestartAtRetirementBoundaries/before_hide
+=== RUN   TestCleanupRestartAtRetirementBoundaries/after_hide
+=== RUN   TestCleanupRestartAtRetirementBoundaries/after_catalog
+=== RUN   TestCleanupRestartAtRetirementBoundaries/after_delete_before_catalog
+=== RUN   TestCleanupRestartAtRetirementBoundaries/after_delete_before_catalog_rename
+=== RUN   TestCleanupRestartAtRetirementBoundaries/partial_delete
+=== RUN   TestCleanupRestartAtRetirementBoundaries/terminal_with_ready
+--- PASS: TestCleanupRestartAtRetirementBoundaries (0.53s)
+    --- PASS: TestCleanupRestartAtRetirementBoundaries/before_hide (0.07s)
+    --- PASS: TestCleanupRestartAtRetirementBoundaries/after_hide (0.07s)
+    --- PASS: TestCleanupRestartAtRetirementBoundaries/after_catalog (0.07s)
+    --- PASS: TestCleanupRestartAtRetirementBoundaries/after_delete_before_catalog (0.10s)
+    --- PASS: TestCleanupRestartAtRetirementBoundaries/after_delete_before_catalog_rename (0.08s)
+    --- PASS: TestCleanupRestartAtRetirementBoundaries/partial_delete (0.07s)
+    --- PASS: TestCleanupRestartAtRetirementBoundaries/terminal_with_ready (0.07s)
+=== RUN   TestCleanupStartupDeletionRemainsFailFast
+--- PASS: TestCleanupStartupDeletionRemainsFailFast (0.05s)
+=== RUN   TestCleanupPendingTimeoutPersistenceAndNewStaging
+--- PASS: TestCleanupPendingTimeoutPersistenceAndNewStaging (0.04s)
+=== RUN   TestCleanupFailedAcquireDoesNotLeakStaging
+--- PASS: TestCleanupFailedAcquireDoesNotLeakStaging (0.04s)
+=== RUN   TestCleanupSlowDeleteAllowsPublicationAndCloseJoins
+    testing.go:1369: TempDir RemoveAll cleanup: unlinkat D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\check-tmp\tmp\TestCleanupSlowDeleteAllowsPublicationAndCloseJoins1314114247\001\catalog: The directory is not empty.
+--- FAIL: TestCleanupSlowDeleteAllowsPublicationAndCloseJoins (0.06s)
+=== RUN   TestCleanupCloseCancelsQueuedRetries
+--- PASS: TestCleanupCloseCancelsQueuedRetries (0.04s)
+=== RUN   TestCleanupFailedCommitRollbackRetiresOwnedReadyTree
+--- PASS: TestCleanupFailedCommitRollbackRetiresOwnedReadyTree (0.05s)
+=== RUN   TestLifecycleStartupCatalogClassification
+=== RUN   TestLifecycleStartupCatalogClassification/unknown_file
+=== RUN   TestLifecycleStartupCatalogClassification/unknown_dir
+=== RUN   TestLifecycleStartupCatalogClassification/id_dir
+=== RUN   TestLifecycleStartupCatalogClassification/corrupt_record
+=== RUN   TestLifecycleStartupCatalogClassification/record_link
+=== RUN   TestLifecycleStartupCatalogClassification/unknown_link
+--- PASS: TestLifecycleStartupCatalogClassification (0.12s)
+    --- PASS: TestLifecycleStartupCatalogClassification/unknown_file (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/unknown_dir (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/id_dir (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/corrupt_record (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/record_link (0.02s)
+    --- PASS: TestLifecycleStartupCatalogClassification/unknown_link (0.02s)
+=== RUN   TestLifecycleRejectsLinkedAncestorBeforeCreation
+--- PASS: TestLifecycleRejectsLinkedAncestorBeforeCreation (0.01s)
+=== RUN   TestLifecycleValidatesAllManagedDirectoriesBeforeCreation
+--- PASS: TestLifecycleValidatesAllManagedDirectoriesBeforeCreation (0.02s)
+=== RUN   TestLifecycleScanFailureBackoffAcrossPasses
+--- PASS: TestLifecycleScanFailureBackoffAcrossPasses (0.03s)
+=== RUN   TestCheckScannerBatchBoundAndFairness
+--- PASS: TestCheckScannerBatchBoundAndFairness (0.38s)
+=== RUN   TestCheckHideReservationProtectsMissingRecord
+--- PASS: TestCheckHideReservationProtectsMissingRecord (0.77s)
+=== RUN   TestCheckLateRecreationAndQuarantineRestart
+--- PASS: TestCheckLateRecreationAndQuarantineRestart (0.08s)
+=== RUN   TestCheckScanFailureDiagnostics
+--- PASS: TestCheckScanFailureDiagnostics (0.02s)
+=== RUN   TestCheckGCSupersessionPointerGuard
+--- PASS: TestCheckGCSupersessionPointerGuard (0.04s)
+=== RUN   TestCheckScannerCannotClaimLivePersistTemp
+--- PASS: TestCheckScannerCannotClaimLivePersistTemp (0.03s)
+=== RUN   TestLifecycleGCFailureThenSupersession
+--- PASS: TestLifecycleGCFailureThenSupersession (0.05s)
+=== RUN   TestLifecycleTerminalCollected
+--- PASS: TestLifecycleTerminalCollected (0.04s)
+=== RUN   TestLifecycleIdleResidueCollected
+--- PASS: TestLifecycleIdleResidueCollected (3.02s)
+=== RUN   TestIndependentTerminalCatalogAndResolveReleased
+--- PASS: TestIndependentTerminalCatalogAndResolveReleased (0.58s)
+=== RUN   TestIndependentDeliveredWaiterSurvivesGC
+--- PASS: TestIndependentDeliveredWaiterSurvivesGC (0.04s)
+=== RUN   TestIndependentOldDeleteBarrierPreservesReplacement
+--- PASS: TestIndependentOldDeleteBarrierPreservesReplacement (0.06s)
+=== RUN   TestIndependentPendingChildDoesNotRetainParent
+=== RUN   TestIndependentPendingChildDoesNotRetainParent/parent_gc=false
+=== RUN   TestIndependentPendingChildDoesNotRetainParent/parent_gc=true
+--- PASS: TestIndependentPendingChildDoesNotRetainParent (0.11s)
+    --- PASS: TestIndependentPendingChildDoesNotRetainParent/parent_gc=false (0.05s)
+    --- PASS: TestIndependentPendingChildDoesNotRetainParent/parent_gc=true (0.06s)
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure/write
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure/rename
+--- PASS: TestIndependentDeletionProceedsDuringCatalogFailure (0.09s)
+    --- PASS: TestIndependentDeletionProceedsDuringCatalogFailure/write (0.04s)
+    --- PASS: TestIndependentDeletionProceedsDuringCatalogFailure/rename (0.04s)
+=== RUN   TestIndependentNoTrafficRemnantsAndActiveProtection
+--- PASS: TestIndependentNoTrafficRemnantsAndActiveProtection (0.09s)
+=== RUN   TestIndependentFailingOldestDoesNotStarveHealthyCleanup
+--- PASS: TestIndependentFailingOldestDoesNotStarveHealthyCleanup (0.86s)
+=== RUN   TestIndependentHideReservationSurvivesRepeatedDiscovery
+--- PASS: TestIndependentHideReservationSurvivesRepeatedDiscovery (0.17s)
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/claimed
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/catalog_unlinked
+--- PASS: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink (0.16s)
+    --- PASS: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/claimed (0.10s)
+    --- PASS: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/catalog_unlinked (0.06s)
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/catalog
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/staging
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/ready
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/trash
+--- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup (0.09s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/catalog (0.02s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/staging (0.02s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/ready (0.02s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/trash (0.02s)
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety/leaf
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety/managed_directory
+--- PASS: TestIndependentSymlinkLeafAndManagedRootSafety (0.06s)
+    --- PASS: TestIndependentSymlinkLeafAndManagedRootSafety/leaf (0.03s)
+    --- PASS: TestIndependentSymlinkLeafAndManagedRootSafety/managed_directory (0.03s)
+=== RUN   TestIndependentCatalogTempPersistBarrier
+--- PASS: TestIndependentCatalogTempPersistBarrier (0.03s)
+=== RUN   TestPluginContract
+--- PASS: TestPluginContract (0.00s)
+=== RUN   TestResponseProjection
+--- PASS: TestResponseProjection (0.00s)
+=== RUN   TestRuleGoSharedOwnerAcquireAndCommit
+[INFO] Performing immediate shutdown
+--- PASS: TestRuleGoSharedOwnerAcquireAndCommit (0.04s)
+=== RUN   TestAcquireCommitSharesGeneration
+--- PASS: TestAcquireCommitSharesGeneration (0.04s)
+=== RUN   TestMultiMemberPublicationSurvivesRestart
+--- PASS: TestMultiMemberPublicationSurvivesRestart (0.05s)
+=== RUN   TestResolvePendingDoesNotExposeProducerLease
+--- PASS: TestResolvePendingDoesNotExposeProducerLease (0.03s)
+=== RUN   TestCommitRejectsUnsafeOrOversizePublication
+=== RUN   TestCommitRejectsUnsafeOrOversizePublication/symlink
+=== RUN   TestCommitRejectsUnsafeOrOversizePublication/oversize
+=== RUN   TestCommitRejectsUnsafeOrOversizePublication/missing_entrypoint
+=== RUN   TestCommitRejectsUnsafeOrOversizePublication/no_regular_files
+=== RUN   TestCommitRejectsUnsafeOrOversizePublication/stale_generation_and_traversal
+--- PASS: TestCommitRejectsUnsafeOrOversizePublication (0.13s)
+    --- PASS: TestCommitRejectsUnsafeOrOversizePublication/symlink (0.03s)
+    --- PASS: TestCommitRejectsUnsafeOrOversizePublication/oversize (0.03s)
+    --- PASS: TestCommitRejectsUnsafeOrOversizePublication/missing_entrypoint (0.03s)
+    --- PASS: TestCommitRejectsUnsafeOrOversizePublication/no_regular_files (0.02s)
+    --- PASS: TestCommitRejectsUnsafeOrOversizePublication/stale_generation_and_traversal (0.02s)
+=== RUN   TestParentExpiryAndRestartReconciliation
+--- PASS: TestParentExpiryAndRestartReconciliation (0.06s)
+=== RUN   TestRestartAbandonsPendingAndRemovesOwnedOrphans
+--- PASS: TestRestartAbandonsPendingAndRemovesOwnedOrphans (0.05s)
+=== RUN   TestFailureAndProductionTimeoutWakeWaiters
+--- PASS: TestFailureAndProductionTimeoutWakeWaiters (0.09s)
+=== RUN   TestFailedGenerationWaiterDoesNotJoinRetry
+--- PASS: TestFailedGenerationWaiterDoesNotJoinRetry (0.05s)
+=== RUN   TestAcquireRejectsDifferentPolicyForLiveIdentity
+--- PASS: TestAcquireRejectsDifferentPolicyForLiveIdentity (0.03s)
+=== RUN   TestRetainedLimitAndOwnedRoot
+--- PASS: TestRetainedLimitAndOwnedRoot (0.08s)
+=== RUN   TestDecodeOperationIsStrict
+--- PASS: TestDecodeOperationIsStrict (0.00s)
+=== RUN   TestResolveUnknownResource
+--- PASS: TestResolveUnknownResource (0.02s)
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	11.108s
+FAIL

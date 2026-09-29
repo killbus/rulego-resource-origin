@@ -1,0 +1,6 @@
+=== RUN   TestIndependentTerminalCatalogAndResolveReleased
+    lifecycle_independent_test.go:206: A1: completed terminal catalog files remain without a retention advance
+--- FAIL: TestIndependentTerminalCatalogAndResolveReleased (3.44s)
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	4.391s
+FAIL

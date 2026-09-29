@@ -1,0 +1,7 @@
+--- FAIL: TestLifecycleTerminalCollected (4.03s)
+    lifecycle_gc_test.go:34: terminal record retained after cleanup
+--- FAIL: TestLifecycleIdleResidueCollected (6.03s)
+    lifecycle_gc_test.go:58: idle managed residue retained
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	10.982s
+FAIL

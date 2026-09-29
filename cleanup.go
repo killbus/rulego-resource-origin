@@ -19,6 +19,7 @@ const (
 // These hooks cover only retirement, catalog publication and scheduler time.
 // Set once at construction; tests must synchronize any state captured by them.
 type cleanupHooks struct {
+	remove       func(string) error
 	rename       func(string, string) error
 	removeAll    func(string) error
 	writeCatalog func(*os.File, []byte) error
@@ -28,7 +29,7 @@ type cleanupHooks struct {
 
 func defaultCleanupHooks() cleanupHooks {
 	return cleanupHooks{
-		rename: os.Rename, removeAll: os.RemoveAll, now: time.Now,
+		rename: os.Rename, remove: os.Remove, removeAll: os.RemoveAll, now: time.Now,
 		writeCatalog: func(f *os.File, data []byte) error {
 			_, err := f.Write(data)
 			return err
@@ -42,6 +43,7 @@ func defaultCleanupHooks() cleanupHooks {
 
 // No paths, producer input or raw filesystem errors cross the logging boundary.
 type cleanupEvent struct {
+	OldestWait time.Duration
 	ResourceID string
 	Generation string
 	Operation  string
@@ -52,6 +54,7 @@ type cleanupEvent struct {
 }
 
 type cleanupWork struct {
+	created time.Time
 	record  *originRecord
 	trash   string
 	staging string
@@ -73,7 +76,7 @@ func (m *originManager) queueCleanupLocked(record *originRecord, hide, persist b
 	}
 	now := m.now().UTC()
 	work := &cleanupWork{
-		record: record, hide: hide, persist: persist, next: now, catalogNext: now,
+		record: record, hide: hide, persist: persist, next: now, catalogNext: now, created: now,
 		trash:   filepath.Join(m.trashDir, key),
 		staging: filepath.Join(m.stagingDir, record.ResourceID, record.Generation),
 	}
@@ -94,6 +97,10 @@ func (m *originManager) readyReservedLocked(id string) bool {
 // Only this step may access ready/<id> or the current catalog. It is serialized
 // with publication. Once hidden, deletion only touches generation-owned paths.
 func (m *originManager) prepareCleanupLocked(work *cleanupWork) error {
+	if err := m.checkManagedPaths(); err != nil {
+		m.cleanupFailedLocked(work, "paths", err)
+		return err
+	}
 	if work.hide {
 		err := m.hooks.rename(filepath.Join(m.readyDir, work.record.ResourceID), work.trash)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -124,6 +131,9 @@ func (m *originManager) cleanupFailedLocked(work *cleanupWork, operation string,
 	}
 	if delay > cleanupMaxDelay {
 		delay = cleanupMaxDelay
+	}
+	if operation == "paths" {
+		work.catalogNext = m.now().UTC().Add(delay)
 	}
 	if operation == "catalog" {
 		work.catalogNext = m.now().UTC().Add(delay)
@@ -162,10 +172,26 @@ func (m *originManager) cleanupEventLocked(work *cleanupWork, operation string, 
 	case errors.Is(err, fs.ErrNotExist):
 		class = "not_found"
 	}
+	var oldest time.Duration
+	pendingCount := len(m.garbage)
+	for _, pending := range m.scanErrors {
+		if pending != nil {
+			pendingCount++
+			if age := now.Sub(pending.created); age > oldest {
+				oldest = age
+			}
+		}
+	}
+	for _, pending := range m.garbage {
+		if age := now.Sub(pending.created); age > oldest {
+			oldest = age
+		}
+	}
 	m.cleanupEvents = append(m.cleanupEvents, cleanupEvent{
+		OldestWait: oldest,
 		ResourceID: work.record.ResourceID, Generation: work.record.Generation,
 		Operation: operation, ErrorClass: class, Attempts: work.failures,
-		Pending: len(m.garbage), Recovered: recovered,
+		Pending: pendingCount, Recovered: recovered,
 	})
 }
 
@@ -213,7 +239,11 @@ func (m *originManager) cleanupBatch() {
 		// Catalog errors are already scheduled and diagnosed. Once hidden,
 		// bytes can be removed even if persistence failed: on restart an old
 		// elapsed ready record without ready bytes reconciles as expired.
-		_ = m.prepareCleanupLocked(work)
+		prepareErr := m.prepareCleanupLocked(work)
+		if prepareErr != nil && (work.hide || m.checkManagedPaths() != nil) {
+			m.mu.Unlock()
+			continue
+		}
 		if work.hide {
 			m.mu.Unlock()
 			continue
@@ -225,9 +255,9 @@ func (m *originManager) cleanupBatch() {
 		operation := "trash"
 		if remove {
 			err = m.hooks.removeAll(work.trash)
-			if err == nil {
+			if err == nil && work.staging != "" {
 				operation = "staging"
-				err = m.hooks.removeAll(work.staging)
+				err = m.removeStaging(work.staging)
 			}
 		}
 		m.mu.Lock()
@@ -238,9 +268,16 @@ func (m *originManager) cleanupBatch() {
 			work.removed = true
 			// Remove only an empty ID container while serialized with Acquire.
 			// Never recursively delete staging/<id>, which can hold a new lease.
-			_ = os.Remove(filepath.Dir(work.staging))
+			if work.staging != "" {
+				_ = os.Remove(filepath.Dir(work.staging))
+			}
 		}
 		if work.removed && !work.persist {
+			if err := m.collectTerminalLocked(work); err != nil {
+				m.cleanupFailedLocked(work, "gc", err)
+				m.mu.Unlock()
+				continue
+			}
 			delete(m.garbage, work.record.ResourceID+"-"+work.record.Generation)
 			if work.failures != 0 {
 				m.cleanupEventLocked(work, "cleanup", nil, true)

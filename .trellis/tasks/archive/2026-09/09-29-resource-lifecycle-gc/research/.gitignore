@@ -1,0 +1,7 @@
+/check-baseline-snapshot/
+/check-negative-*/
+/check-perf-*/
+/baseline-run/
+/boundary-run/
+/test-tmp/
+/check-tmp/

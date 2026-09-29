@@ -1,0 +1,7 @@
+Main execution, Windows amd64, workspace candidate; same command as mutation:
+go test -count=1 -timeout=60s -run '^TestIndependentTerminalCatalogAndResolveReleased$' -v .
+=== RUN   TestIndependentTerminalCatalogAndResolveReleased
+--- PASS: TestIndependentTerminalCatalogAndResolveReleased (0.46s)
+PASS
+ok  github.com/killbus/rulego-resource-origin 1.399s
+Exit code: 0

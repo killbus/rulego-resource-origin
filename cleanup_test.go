@@ -207,7 +207,7 @@ func TestCleanupRetriesWithoutLiveRecordsOrTraffic(t *testing.T) {
 	m := cleanupManager(t, config, false)
 	lease, ready := publishCleanup(t, m, "idle")
 	faults.remove.Store(true)
-	awaitCleanup(t, func() bool { return clock.hasTimer(*ready.ExpiresAt) })
+	awaitCleanup(t, func() bool { return clock.hasTimer(clock.now().Add(time.Second)) })
 	clock.advance(time.Minute) // Expiry worker, not Resolve or incoming traffic.
 	awaitCleanup(t, func() bool { return clock.hasTimer(clock.now().Add(time.Second)) })
 	assertCleanupCount(t, m, 1, 0)
@@ -336,7 +336,13 @@ func TestCleanupCatalogFailureRecoveryAndSupersession(t *testing.T) {
 				}
 				clock.advance(time.Second)
 				m.cleanupBatch()
-				got := readCleanupRecord(t, m, lease.ResourceID)
+				got := originRecord{}
+				if supersede {
+					got = readCleanupRecord(t, m, lease.ResourceID)
+				} else {
+					assertGone(t, filepath.Join(m.catalogDir, lease.ResourceID+".json"))
+					wantState, wantGeneration = "", ""
+				}
 				if got.State != wantState || got.Generation != wantGeneration {
 					t.Fatalf("stale catalog overwrite: %#v", got)
 				}
@@ -395,9 +401,9 @@ func TestCleanupDeletionDoesNotWaitForCatalogRecovery(t *testing.T) {
 			clock.advance(2 * time.Second)
 			m.cleanupBatch()
 			assertCleanupCount(t, m, 0, 0)
-			got := readCleanupRecord(t, m, lease.ResourceID)
-			if got.State != stateExpired || got.Generation != lease.Generation || faults.deletes.Load() != deletes {
-				t.Fatalf("metadata repair changed completed deletion: %#v", got)
+			assertGone(t, filepath.Join(m.catalogDir, lease.ResourceID+".json"))
+			if faults.deletes.Load() != deletes {
+				t.Fatal("metadata repair repeated completed deletion")
 			}
 		})
 	}
@@ -522,7 +528,7 @@ func TestCleanupRestartAtRetirementBoundaries(t *testing.T) {
 			assertCleanupCount(t, restarted, 0, healthy.Size)
 			assertGone(t, trash)
 			assertGone(t, filepath.Join(m.readyDir, lease.ResourceID))
-			if got, err := restarted.Resolve(lease.ResourceID, ""); err != nil || got.State != stateExpired || got.URL != "" {
+			if got, err := restarted.Resolve(lease.ResourceID, ""); err != nil || got.State != stateNotFound || got.URL != "" {
 				t.Fatalf("expired restored: %#v %v", got, err)
 			}
 			if got, err := restarted.Resolve(healthy.ResourceID, ""); err != nil || got.State != stateReady {

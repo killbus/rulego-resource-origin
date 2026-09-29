@@ -1,0 +1,59 @@
+package main
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestLifecycleTerminalCollected(t *testing.T) {
+	m := testManager(t, 4096, 2048)
+	a, err := m.Acquire(context.Background(), request("gc"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = m.Fail(failRequest{ResourceID: a.Descriptor.ResourceID, Generation: a.Descriptor.Generation, Kind: "test"}); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(4 * time.Second)
+	for time.Now().Before(deadline) {
+		d, err := m.Resolve(a.Descriptor.ResourceID, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if d.State == stateNotFound {
+			if _, err := os.Stat(filepath.Join(m.catalogDir, d.ResourceID+".json")); !os.IsNotExist(err) {
+				t.Fatalf("catalog retained: %v", err)
+			}
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("terminal record retained after cleanup")
+}
+
+func TestLifecycleIdleResidueCollected(t *testing.T) {
+	m := testManager(t, 4096, 2048)
+	paths := []string{filepath.Join(m.catalogDir, ".record-orphan"), filepath.Join(m.readyDir, "unknown"), filepath.Join(m.stagingDir, "unknown"), filepath.Join(m.trashDir, "unknown")}
+	for _, p := range paths {
+		if err := os.WriteFile(p, []byte("residue"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	deadline := time.Now().Add(6 * time.Second)
+	for time.Now().Before(deadline) {
+		remaining := false
+		for _, p := range paths {
+			if _, err := os.Lstat(p); !os.IsNotExist(err) {
+				remaining = true
+			}
+		}
+		if !remaining {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("idle managed residue retained")
+}

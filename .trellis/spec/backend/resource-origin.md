@@ -42,8 +42,34 @@ Relations are `Produce`, `Success`, and `Failure`. REST endpoints may use the
 - Failure/recovery log samples contain sanitized IDs, operation, error class,
   failure count and pending work count. Emit at most one event/second/manager,
   outside the mutex. Pending includes catalog-only work, not a trash byte measure.
+  Register scan failures before emitting their first event so Pending includes
+  the failed root. Clear recovered scan backlog after a successful full pass;
+  stale diagnostics must not retain pending counts or oldest-wait age forever.
 - Startup remains fail-fast on cleanup errors and reads catalog v1. Close cancels
   timers and joins the worker, waiting for any in-flight filesystem syscall.
+- A root has one manager owner; there is no cross-process locking. Close joins
+  the cleanup worker, not producer calls; callers must finish their own work.
+- Failed/expired records have no retention interval. After payload removal,
+  terminal persistence and waiter delivery finish, collectTerminalLocked checks
+  the exact record pointer and unlinks catalog/<id>.json under the publication
+  mutex, then drops the memory record. Unlink failure retains retry responsibility.
+  A pending child does not keep its terminal parent alive; commit still returns
+  parent_unavailable after the parent record is collected.
+- Idle residue reconciliation rotates catalog, ready, staging and trash, observing
+  at most 32 directory entries per one-second opportunity with bounded cursors.
+  Protect pending generations, live ready paths, hide reservations and queued or
+  in-flight cleanup paths. Claim unknown entries by rename into a unique
+  trash/.gc-*/payload; perform recursive deletion outside the publication mutex.
+  Catalog observation/claim shares the mutex with temporary catalog writes.
+- Validate managed directories and their ancestors without following symlinks,
+  including before creating missing directories. Startup rejects abnormal managed
+  paths and ID-shaped catalog symlinks/special files; unknown names and directory
+  entries are reclaimable residue. A symlink residue may be removed, never its
+  target. Lstat checks do not claim protection against hostile concurrent path
+  replacement by another process.
+- Catalog v1 remains readable; GC does not preserve terminal history for rollback.
+  Once collected, resolve returns not_found (REST 404), so callers cannot depend
+  on a permanent expired/410 response. TTL remains absolute and is not refreshed.
 - maxRetainedBytes covers ready payloads only; staging, trash, persistent catalog
   records and filesystem overhead are excluded. No trash or total-disk quota is
   implied. Linux readers can retain blocks after unlink. Late producers can
@@ -69,6 +95,9 @@ Relations are `Produce`, `Success`, and `Failure`. REST endpoints may use the
 | Catalog write/rename fails after hiding | Keep catalog repair pending, still remove generation-owned bytes; never restore visibility. |
 | Deletion fails/partially succeeds | Retain work and retry idempotently with backoff. |
 | Pure read of absent ID/member | `not_found` state |
+| Terminal metadata already collected | `not_found`, REST 404; no URL |
+| Catalog unlink fails | Keep terminal record and retry; do not delete a replacement generation |
+| Managed directory/ancestor is symlink or non-directory at startup | Fail initialization |
 
 ## 5. Good / Base / Bad Cases
 
@@ -78,6 +107,8 @@ Relations are `Produce`, `Success`, and `Failure`. REST endpoints may use the
   recovers; restart from the old elapsed ready catalog remains safe.
 - Base: concurrent equivalent acquires share one generation and wait for its
   terminal result.
+- Good collection: no requests arrive after expiry; bytes and terminal catalog
+  disappear, and a later acquire can publish a new generation safely.
 - Bad: callers provide member inventories, write outside `stagingDir`, reuse a
   stale generation, or expose staging paths through a read-only resolve.
 
@@ -99,6 +130,18 @@ Relations are `Produce`, `Success`, and `Failure`. REST endpoints may use the
   and conflicts with the host's existing port.
 - RuleGo Server `v0.37.0` static mappings return `405` for `HEAD`; do not add a
   second HTTP server here to compensate for a host capability gap.
+- Lifecycle GC: independently execute baseline target failures and candidate
+  passes; disabling GC and removing generation guards must falsify key assertions.
+  Use fixed barriers for old-generation collection versus acquire, active catalog
+  writes versus residue claim, hide reservations and queued deletion ownership.
+- Recovery: kill a real isolated process after quarantine claim and after catalog
+  unlink, restart, and assert residue reclamation and new-generation safety. Disk
+  fixtures alone do not establish process-crash behavior. Preserve actual Linux
+  runtime/race receipts and compare publication latency on the same workload.
+- Deterministic manual-cleanup fixtures must join the worker before driving
+  batches and explicitly close any cursors reopened after Close. Do not run
+  manual cleanupBatch concurrently with the live worker. Runtime receipts must
+  distinguish graceful restart from SIGKILL followed by startup and native GET.
 
 ## 7. Wrong vs Correct
 
@@ -112,3 +155,10 @@ of staging/<id> after that ID has acquired a new generation.
 
 Correct: retain generation-scoped work with independent catalog/deletion deadlines;
 remove only trash/<id>-<generation> and staging/<id>/<generation>.
+
+Wrong: infer cleanup completion from a missing map entry, unlink an observed ID
+after releasing the mutex, or retain a terminal parent for pending children.
+
+Correct: require completed generation-owned cleanup, verify
+`m.records[r.ResourceID] == r`, unlink and delete under the same lock, and treat
+an absent parent as unavailable.

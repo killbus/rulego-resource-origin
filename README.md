@@ -161,7 +161,28 @@ call must return first.
 
 maxRetainedBytes limits committed ready payloads. Pending staging, residual trash,
 catalog records and filesystem overhead are outside that counter. There is no
-trash byte/count/age quota or hard total-disk guarantee. Catalog records remain
-after expiry. On Linux, open readers can retain allocated blocks after successful
+trash byte/count/age quota or hard total-disk guarantee. Once terminal payload
+cleanup, persistence and waiter delivery complete, catalog and memory records are
+collected at the next cleanup opportunity, without a retention period. Resolve
+then returns not_found (HTTP 404), including IDs previously expired (HTTP 410).
+Old generation tokens remain stale when the same identity is acquired again.
+On Linux, open readers can retain allocated blocks after successful
 unlink until they close. Producers must stop writing after their lease ends; a
 late writer can recreate expired staging after successful cleanup.
+
+The worker periodically scans catalog, ready, staging and trash in bounded
+batches even without requests. Abandoned entries, including catalog .record-*
+temporaries and unknown names inside these exclusive directories, are isolated
+in uniquely named trash directories before recursive deletion outside the
+publication mutex. Current pending staging and valid ready publications are
+protected. Managed directory symlinks or abnormal ancestors stop cleanup; leaf
+links are removed without following their targets. Diagnostics include pending
+work, oldest queue age and error class, with manager-wide rate limiting.
+
+Run only one manager per root; the ownership marker is not a process lock. Stop
+old requests and producers before restarting. Close joins the worker but does
+not join callers. Recovery abandons pending leases, preserves valid ready
+publications, and collects completed terminal records. Catalog v1 is unchanged.
+Rollback uses the old binary's cleanup rules; it may retain .record-* files
+until a newer binary runs again. Eventual cleanup assumes finite input, healthy
+filesystem access and producers eventually stopping late writes.

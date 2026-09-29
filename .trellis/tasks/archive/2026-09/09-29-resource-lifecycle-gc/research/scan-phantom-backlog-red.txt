@@ -1,0 +1,10 @@
+=== RUN   TestCheckScanErrorsFailureOnly
+=== RUN   TestCheckScanErrorsFailureOnly/healthy
+    lifecycle_check_test.go:195: healthy partial scan registered backlog
+=== RUN   TestCheckScanErrorsFailureOnly/failure_then_clean
+--- FAIL: TestCheckScanErrorsFailureOnly (0.23s)
+    --- FAIL: TestCheckScanErrorsFailureOnly/healthy (0.09s)
+    --- PASS: TestCheckScanErrorsFailureOnly/failure_then_clean (0.14s)
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	1.130s
+FAIL

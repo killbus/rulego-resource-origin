@@ -1,0 +1,11 @@
+--- candidate/reconcile_gc.go
++++ eof-clear/reconcile_gc.go
+@@ -120,7 +120,7 @@
+ 		if diagnostic.failures != before {
+ 			c.failed = true
+ 			m.scanErrors[index] = diagnostic
+-		} else if completed && !c.failed {
++		} else if completed {
+ 			m.scanErrors[index] = nil
+ 		}
+ 	}()

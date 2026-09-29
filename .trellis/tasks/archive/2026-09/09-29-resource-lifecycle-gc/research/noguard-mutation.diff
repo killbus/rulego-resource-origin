@@ -1,0 +1,13 @@
+diff --git a/reconcile_gc.go b/D:/Repositories/rulego-resource-origin/.trellis/tasks/09-29-resource-lifecycle-gc/research/check-tmp/mut-noguard/reconcile_gc.go
+index 440d731..fb0fd4b 100644
+--- a/reconcile_gc.go
++++ b/D:/Repositories/rulego-resource-origin/.trellis/tasks/09-29-resource-lifecycle-gc/research/check-tmp/mut-noguard/reconcile_gc.go
+@@ -68,7 +68,7 @@ func (m *originManager) removeStaging(path string) error {
+ // Pointer validation and unlink share the publication critical section.
+ func (m *originManager) collectTerminalLocked(work *cleanupWork) error {
+ 	r := work.record
+-	if m.records[r.ResourceID] != r || (r.State != stateFailed && r.State != stateExpired) {
++	if r.State != stateFailed && r.State != stateExpired { // GUARD REMOVED
+ 		return nil
+ 	}
+ 	if !work.removed || work.persist || work.hide || work.inflight || m.waiters[r.ResourceID] != nil {

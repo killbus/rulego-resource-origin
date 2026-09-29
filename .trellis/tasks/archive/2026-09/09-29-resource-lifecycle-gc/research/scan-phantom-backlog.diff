@@ -1,0 +1,10 @@
+--- candidate/reconcile_gc.go
++++ phantom-backlog/reconcile_gc.go
+@@ -113,6 +113,7 @@
+ 	if now.Before(diagnostic.next) {
+ 		return
+ 	}
++	m.scanErrors[index] = diagnostic
+ 	before := diagnostic.failures
+ 	c := &m.residue[index]
+ 	completed := false

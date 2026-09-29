@@ -1,0 +1,93 @@
+[INFO] [config] loaded from /app/config.conf
+[WARN] [security] WARNING: using default JWT secret key, please change it in config for production use
+[WARN] [security] WARNING: user "admin" has default password, please change it for production use
+[INFO] [before_init] executing hook: register-stores (priority=0)
+[INFO] [init] initializing module: user (priority=10)
+[INFO] [init] initializing module: mcp (priority=25)
+[INFO] [init] initializing module: rule (priority=30)
+[INFO] [init] initializing module: node (priority=35)
+[INFO] [init] initializing module: runlog (priority=45)
+[INFO] [init] initializing module: locale (priority=50)
+[INFO] [init] initializing module: skill (priority=55)
+[INFO] [init] initializing module: system (priority=65)
+[INFO] [init] initializing module: marketplace (priority=70)
+[INFO] [init] initializing module: iotpoint (priority=75)
+[INFO] [start] starting module: user
+[INFO] [start] starting module: mcp
+[INFO] [start] starting module: rule
+[INFO] admin number of rule chains loaded: 0
+[INFO] [start] starting module: node
+[INFO] [start] starting module: runlog
+[INFO] [start] starting module: locale
+[INFO] [start] starting module: skill
+[INFO] [start] starting module: system
+[INFO] [start] starting module: marketplace
+[INFO] [start] starting module: iotpoint
+[INFO] started rest server on :9090
+[INFO] RuleGo-Server started on :9090
+[INFO] received signal: terminated, shutting down...
+[INFO] [stop] stopping module: iotpoint
+[INFO] [stop] stopping module: marketplace
+[INFO] [stop] stopping module: system
+[INFO] [stop] stopping module: skill
+[INFO] [stop] stopping module: locale
+[INFO] [stop] stopping module: runlog
+[INFO] [stop] stopping module: node
+[INFO] [stop] stopping module: rule
+[INFO] started rest server on :9090
+[INFO] [stop] stopping module: mcp
+[INFO] [stop] stopping module: user
+[INFO] [config] loaded from /app/config.conf
+[WARN] [security] WARNING: using default JWT secret key, please change it in config for production use
+[WARN] [security] WARNING: user "admin" has default password, please change it for production use
+[INFO] [before_init] executing hook: register-stores (priority=0)
+[INFO] [init] initializing module: user (priority=10)
+[INFO] [init] initializing module: mcp (priority=25)
+[INFO] [init] initializing module: rule (priority=30)
+[INFO] [init] initializing module: node (priority=35)
+[INFO] [init] initializing module: runlog (priority=45)
+[INFO] [init] initializing module: locale (priority=50)
+[INFO] [init] initializing module: skill (priority=55)
+[INFO] [init] initializing module: system (priority=65)
+[INFO] [init] initializing module: marketplace (priority=70)
+[INFO] [init] initializing module: iotpoint (priority=75)
+[INFO] [start] starting module: user
+[INFO] [start] starting module: mcp
+[INFO] [start] starting module: rule
+[INFO] started rest server on :9090
+[INFO] admin number of rule chains loaded: 1
+[INFO] [start] starting module: node
+[INFO] [start] starting module: runlog
+[INFO] [start] starting module: locale
+[INFO] [start] starting module: skill
+[INFO] [start] starting module: system
+[INFO] [start] starting module: marketplace
+[INFO] [start] starting module: iotpoint
+[INFO] RuleGo-Server started on :9090
+[INFO] [config] loaded from /app/config.conf
+[WARN] [security] WARNING: using default JWT secret key, please change it in config for production use
+[WARN] [security] WARNING: user "admin" has default password, please change it for production use
+[INFO] [before_init] executing hook: register-stores (priority=0)
+[INFO] [init] initializing module: user (priority=10)
+[INFO] [init] initializing module: mcp (priority=25)
+[INFO] [init] initializing module: rule (priority=30)
+[INFO] [init] initializing module: node (priority=35)
+[INFO] [init] initializing module: runlog (priority=45)
+[INFO] [init] initializing module: locale (priority=50)
+[INFO] [init] initializing module: skill (priority=55)
+[INFO] [init] initializing module: system (priority=65)
+[INFO] [init] initializing module: marketplace (priority=70)
+[INFO] [init] initializing module: iotpoint (priority=75)
+[INFO] [start] starting module: user
+[INFO] [start] starting module: mcp
+[INFO] [start] starting module: rule
+[INFO] started rest server on :9090
+[INFO] admin number of rule chains loaded: 1
+[INFO] [start] starting module: node
+[INFO] [start] starting module: runlog
+[INFO] [start] starting module: locale
+[INFO] [start] starting module: skill
+[INFO] [start] starting module: system
+[INFO] [start] starting module: marketplace
+[INFO] [start] starting module: iotpoint
+[INFO] RuleGo-Server started on :9090

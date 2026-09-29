@@ -1,0 +1,9 @@
+=== RUN   TestLifecycleCrashHelperWorker
+    lifecycle_crash_test.go:29: crash helper requires CRASH_ROOT, CRASH_MODE and CRASH_BARRIER
+--- SKIP: TestLifecycleCrashHelperWorker (0.00s)
+=== RUN   TestLifecycleCrashAfterQuarantineClaimRestartsClean
+--- PASS: TestLifecycleCrashAfterQuarantineClaimRestartsClean (1.24s)
+=== RUN   TestLifecycleCrashAfterCatalogUnlinkRestartsClean
+--- PASS: TestLifecycleCrashAfterCatalogUnlinkRestartsClean (0.12s)
+PASS
+ok  	github.com/killbus/rulego-resource-origin	2.368s

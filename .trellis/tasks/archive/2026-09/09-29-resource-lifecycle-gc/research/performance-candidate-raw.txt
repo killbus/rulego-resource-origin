@@ -1,0 +1,12 @@
+goos: windows
+goarch: amd64
+pkg: github.com/killbus/rulego-resource-origin
+cpu: Intel(R) Core(TM) i5-4460  CPU @ 3.20GHz
+BenchmarkPublishOnly-4        	     211	  11218955 ns/op	   22378 B/op	     104 allocs/op
+BenchmarkPublishOnly-4        	     211	  11669757 ns/op	   21346 B/op	     103 allocs/op
+BenchmarkPublishOnly-4        	     193	  11865321 ns/op	   22476 B/op	     104 allocs/op
+BenchmarkPublishFailChurn-4   	     219	  10793777 ns/op	   58435 B/op	     398 allocs/op
+BenchmarkPublishFailChurn-4   	      97	  34654015 ns/op	   60911 B/op	     413 allocs/op
+BenchmarkPublishFailChurn-4   	     183	  15576038 ns/op	   59878 B/op	     409 allocs/op
+PASS
+ok  	github.com/killbus/rulego-resource-origin	29.302s

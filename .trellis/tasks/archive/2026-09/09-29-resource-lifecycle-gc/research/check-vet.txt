@@ -1,0 +1,2 @@
+package github.com/killbus/rulego-resource-origin/tmp/race-validation/go-build4142511303/b126
+	D:\Applications\Scoop\apps\go\current\src\runtime\cgo\cgo.go:36:8: use of internal package internal/runtime/sys not allowed

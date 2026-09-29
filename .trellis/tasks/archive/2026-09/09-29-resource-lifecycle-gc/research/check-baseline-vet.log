@@ -1,0 +1,6 @@
+Command: go vet ./...
+Working directory: research/check-baseline-snapshot (see check-baseline-environment.json for the absolute path)
+Baseline: b22d4b8a08a8a46d3e01b5ced7a154642f710e5c
+Environment: identical TEMP/TMP/GOCACHE overrides to independent baseline tests
+Exit code: 0
+Output: (empty)
