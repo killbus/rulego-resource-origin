@@ -1,0 +1,23 @@
+--- FAIL: TestCleanupRestartAtRetirementBoundaries (0.45s)
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/before_hide (0.06s)
+        cleanup_test.go:528: pending=1 retained=7, want 0/7
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/after_hide (0.06s)
+        cleanup_test.go:528: pending=1 retained=7, want 0/7
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/after_catalog (0.06s)
+        cleanup_test.go:528: pending=1 retained=7, want 0/7
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/after_delete_before_catalog (0.07s)
+        cleanup_test.go:528: pending=1 retained=7, want 0/7
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/after_delete_before_catalog_rename (0.07s)
+        cleanup_test.go:528: pending=1 retained=7, want 0/7
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/partial_delete (0.06s)
+        cleanup_test.go:528: pending=1 retained=7, want 0/7
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/terminal_with_ready (0.06s)
+        cleanup_test.go:528: pending=1 retained=7, want 0/7
+--- FAIL: TestCleanupStartupDeletionRemainsFailFast (0.05s)
+    cleanup_test.go:558: pending=1 retained=0, want 0/0
+[INFO] Performing immediate shutdown
+--- FAIL: TestFailedGenerationWaiterDoesNotJoinRetry (0.02s)
+    testing.go:1369: TempDir RemoveAll cleanup: unlinkat D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestFailedGenerationWaiterDoesNotJoinRetry4029987044\001\catalog: The directory is not empty.
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	8.719s
+FAIL

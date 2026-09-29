@@ -1,0 +1,7 @@
+--- FAIL: TestLifecycleTerminalCollected (0.01s)
+    lifecycle_gc_test.go:12: resolve root: Access is denied.
+--- FAIL: TestLifecycleIdleResidueCollected (0.00s)
+    lifecycle_gc_test.go:26: resolve root: Access is denied.
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	3.564s
+FAIL

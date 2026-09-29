@@ -1,0 +1,89 @@
+--- FAIL: TestCleanupRetriesWithoutLiveRecordsOrTraffic (0.00s)
+    cleanup_test.go:207: resolve root: Access is denied.
+--- FAIL: TestCleanupPartialDeletionAndNewGeneration (0.00s)
+    cleanup_test.go:250: resolve root: Access is denied.
+--- FAIL: TestCleanupRenameFailureReservesOnlyItsIdentity (0.00s)
+    cleanup_test.go:283: resolve root: Access is denied.
+--- FAIL: TestCleanupCatalogFailureRecoveryAndSupersession (0.03s)
+    --- FAIL: TestCleanupCatalogFailureRecoveryAndSupersession/write/supersede=false (0.01s)
+        cleanup_test.go:316: resolve root: Access is denied.
+    --- FAIL: TestCleanupCatalogFailureRecoveryAndSupersession/write/supersede=true (0.01s)
+        cleanup_test.go:316: resolve root: Access is denied.
+    --- FAIL: TestCleanupCatalogFailureRecoveryAndSupersession/rename/supersede=false (0.01s)
+        cleanup_test.go:316: resolve root: Access is denied.
+    --- FAIL: TestCleanupCatalogFailureRecoveryAndSupersession/rename/supersede=true (0.01s)
+        cleanup_test.go:316: resolve root: Access is denied.
+--- FAIL: TestCleanupDeletionDoesNotWaitForCatalogRecovery (0.02s)
+    --- FAIL: TestCleanupDeletionDoesNotWaitForCatalogRecovery/write (0.01s)
+        cleanup_test.go:355: resolve root: Access is denied.
+    --- FAIL: TestCleanupDeletionDoesNotWaitForCatalogRecovery/rename (0.01s)
+        cleanup_test.go:355: resolve root: Access is denied.
+--- FAIL: TestCleanupBackoffBatchFairnessAndDiagnostics (0.00s)
+    cleanup_test.go:425: resolve root: Access is denied.
+--- FAIL: TestCleanupRestartAtRetirementBoundaries (0.25s)
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/before_hide (0.00s)
+        cleanup_test.go:477: resolve root: Access is denied.
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/after_hide (0.03s)
+        cleanup_test.go:477: resolve root: Access is denied.
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/after_catalog (0.06s)
+        cleanup_test.go:477: resolve root: Access is denied.
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/after_delete_before_catalog (0.01s)
+        cleanup_test.go:477: resolve root: Access is denied.
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/after_delete_before_catalog_rename (0.10s)
+        cleanup_test.go:477: resolve root: Access is denied.
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/partial_delete (0.04s)
+        cleanup_test.go:477: resolve root: Access is denied.
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/terminal_with_ready (0.00s)
+        cleanup_test.go:477: resolve root: Access is denied.
+--- FAIL: TestCleanupStartupDeletionRemainsFailFast (0.00s)
+    cleanup_test.go:542: resolve root: Access is denied.
+--- FAIL: TestCleanupPendingTimeoutPersistenceAndNewStaging (0.00s)
+    cleanup_test.go:558: resolve root: Access is denied.
+--- FAIL: TestCleanupFailedAcquireDoesNotLeakStaging (0.00s)
+    cleanup_test.go:603: resolve root: Access is denied.
+--- FAIL: TestCleanupSlowDeleteAllowsPublicationAndCloseJoins (0.00s)
+    cleanup_test.go:633: resolve root: Access is denied.
+--- FAIL: TestCleanupCloseCancelsQueuedRetries (0.00s)
+    cleanup_test.go:693: resolve root: Access is denied.
+--- FAIL: TestCleanupFailedCommitRollbackRetiresOwnedReadyTree (0.00s)
+    cleanup_test.go:718: resolve root: Access is denied.
+--- FAIL: TestLifecycleTerminalCollected (0.00s)
+    lifecycle_gc_test.go:12: resolve root: Access is denied.
+--- FAIL: TestLifecycleIdleResidueCollected (0.00s)
+    lifecycle_gc_test.go:38: resolve root: Access is denied.
+--- FAIL: TestRuleGoSharedOwnerAcquireAndCommit (0.02s)
+    node_test.go:79: nodeType:resourceOrigin for id:owner init error:resolve root: Access is denied.
+--- FAIL: TestAcquireCommitSharesGeneration (0.03s)
+    origin_test.go:41: resolve root: Access is denied.
+--- FAIL: TestMultiMemberPublicationSurvivesRestart (0.00s)
+    origin_test.go:103: resolve root: Access is denied.
+--- FAIL: TestResolvePendingDoesNotExposeProducerLease (0.01s)
+    origin_test.go:144: resolve root: Access is denied.
+--- FAIL: TestCommitRejectsUnsafeOrOversizePublication (0.20s)
+    --- FAIL: TestCommitRejectsUnsafeOrOversizePublication/symlink (0.03s)
+        origin_test.go:175: resolve root: Access is denied.
+    --- FAIL: TestCommitRejectsUnsafeOrOversizePublication/oversize (0.04s)
+        origin_test.go:194: resolve root: Access is denied.
+    --- FAIL: TestCommitRejectsUnsafeOrOversizePublication/missing_entrypoint (0.05s)
+        origin_test.go:211: resolve root: Access is denied.
+    --- FAIL: TestCommitRejectsUnsafeOrOversizePublication/no_regular_files (0.07s)
+        origin_test.go:229: resolve root: Access is denied.
+    --- FAIL: TestCommitRejectsUnsafeOrOversizePublication/stale_generation_and_traversal (0.00s)
+        origin_test.go:244: resolve root: Access is denied.
+--- FAIL: TestParentExpiryAndRestartReconciliation (0.00s)
+    origin_test.go:269: resolve root: Access is denied.
+--- FAIL: TestRestartAbandonsPendingAndRemovesOwnedOrphans (0.00s)
+    origin_test.go:339: resolve root: Access is denied.
+--- FAIL: TestFailureAndProductionTimeoutWakeWaiters (0.01s)
+    origin_test.go:387: resolve root: Access is denied.
+--- FAIL: TestFailedGenerationWaiterDoesNotJoinRetry (0.00s)
+    origin_test.go:424: resolve root: Access is denied.
+--- FAIL: TestAcquireRejectsDifferentPolicyForLiveIdentity (0.03s)
+    origin_test.go:474: resolve root: Access is denied.
+--- FAIL: TestRetainedLimitAndOwnedRoot (0.03s)
+    origin_test.go:487: resolve root: Access is denied.
+--- FAIL: TestResolveUnknownResource (0.03s)
+    origin_test.go:543: resolve root: Access is denied.
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	2.316s
+FAIL

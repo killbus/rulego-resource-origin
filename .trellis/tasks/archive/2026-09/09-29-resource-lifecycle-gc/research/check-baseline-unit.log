@@ -1,0 +1,62 @@
+=== RUN   TestIndependentTerminalCatalogAndResolveReleased
+    lifecycle_independent_test.go:206: A1: completed terminal catalog files remain without a retention advance
+--- FAIL: TestIndependentTerminalCatalogAndResolveReleased (3.58s)
+=== RUN   TestIndependentDeliveredWaiterSurvivesGC
+    lifecycle_independent_test.go:261: A1: delivered waiter incorrectly retains terminal catalog
+--- FAIL: TestIndependentDeliveredWaiterSurvivesGC (3.04s)
+=== RUN   TestIndependentOldDeleteBarrierPreservesReplacement
+--- PASS: TestIndependentOldDeleteBarrierPreservesReplacement (0.07s)
+=== RUN   TestIndependentPendingChildDoesNotRetainParent
+=== RUN   TestIndependentPendingChildDoesNotRetainParent/parent_gc=false
+=== RUN   TestIndependentPendingChildDoesNotRetainParent/parent_gc=true
+    lifecycle_independent_test.go:357: A1/A6: pending child prevented terminal parent catalog GC
+--- FAIL: TestIndependentPendingChildDoesNotRetainParent (3.24s)
+    --- PASS: TestIndependentPendingChildDoesNotRetainParent/parent_gc=false (0.05s)
+    --- FAIL: TestIndependentPendingChildDoesNotRetainParent/parent_gc=true (3.19s)
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure/write
+    lifecycle_independent_test.go:416: A1: repaired terminal catalog was not collected
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure/rename
+    lifecycle_independent_test.go:416: A1: repaired terminal catalog was not collected
+--- FAIL: TestIndependentDeletionProceedsDuringCatalogFailure (6.07s)
+    --- FAIL: TestIndependentDeletionProceedsDuringCatalogFailure/write (3.03s)
+    --- FAIL: TestIndependentDeletionProceedsDuringCatalogFailure/rename (3.04s)
+=== RUN   TestIndependentNoTrafficRemnantsAndActiveProtection
+    lifecycle_independent_test.go:453: A3: no-traffic worker retained unknown/temp/old-generation remnants
+--- FAIL: TestIndependentNoTrafficRemnantsAndActiveProtection (3.05s)
+=== RUN   TestIndependentFailingOldestDoesNotStarveHealthyCleanup
+--- PASS: TestIndependentFailingOldestDoesNotStarveHealthyCleanup (0.74s)
+=== RUN   TestIndependentHideReservationSurvivesRepeatedDiscovery
+--- PASS: TestIndependentHideReservationSurvivesRepeatedDiscovery (0.06s)
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/claimed
+    lifecycle_independent_test.go:603: A2/A3: recovery retained claimed/temp/terminal residue
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/catalog_unlinked
+    lifecycle_independent_test.go:603: A2/A3: recovery retained claimed/temp/terminal residue
+--- FAIL: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink (6.11s)
+    --- FAIL: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/claimed (3.05s)
+    --- FAIL: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/catalog_unlinked (3.06s)
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/catalog
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/staging
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/ready
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/trash
+--- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup (0.07s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/catalog (0.02s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/staging (0.02s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/ready (0.02s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/trash (0.02s)
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety/leaf
+    lifecycle_independent_test.go:666: A3: no-traffic leaf symlink was not collected
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety/managed_directory
+    lifecycle_independent_test.go:663: A3: startup accepted symlinked managed directory
+    lifecycle_independent_test.go:668: open D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\check-baseline-snapshot\.test-temp\TestIndependentSymlinkLeafAndManagedRootSafetymanaged_directory535129588\002\sentinel: The system cannot find the file specified.
+--- FAIL: TestIndependentSymlinkLeafAndManagedRootSafety (3.04s)
+    --- FAIL: TestIndependentSymlinkLeafAndManagedRootSafety/leaf (3.02s)
+    --- FAIL: TestIndependentSymlinkLeafAndManagedRootSafety/managed_directory (0.02s)
+=== RUN   TestIndependentCatalogTempPersistBarrier
+--- PASS: TestIndependentCatalogTempPersistBarrier (0.02s)
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	30.125s
+FAIL

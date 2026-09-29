@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/resource-origin.md","reason":"Existing lifecycle ownership and compatibility contracts."}
+{"file":".trellis/tasks/09-29-resource-lifecycle-gc/research/baseline.md","reason":"Baseline and historical failure evidence."}
+{"file":".trellis/tasks/09-29-resource-lifecycle-gc/research/review-corrections.md","reason":"Correct overclaims; bounded scope of v2."}
+{"file":".trellis/tasks/09-29-resource-lifecycle-gc/research/atomic-decomposition-third-review.md","reason":"Third review and priority errata; validate against code, not consensus."}

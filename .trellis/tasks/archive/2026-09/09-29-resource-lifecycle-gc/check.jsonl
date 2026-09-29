@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/resource-origin.md","reason":"Independent contract oracle."}
+{"file":".trellis/tasks/09-29-resource-lifecycle-gc/research/baseline.md","reason":"Evidence limitations and historical failure."}
+{"file":".trellis/tasks/09-29-resource-lifecycle-gc/research/review-corrections.md","reason":"Counter-audit and excluded false invariants."}
+{"file":".trellis/tasks/archive/2026-09/09-28-trash-cleanup-recovery/research/acceptance-evidence.md","reason":"Preserve actual earlier failures and tested scope."}
+{"file":".trellis/tasks/09-29-resource-lifecycle-gc/research/atomic-decomposition-third-review.md","reason":"Third review and priority errata; validate against code, not consensus."}

@@ -1,0 +1,10 @@
+=== RUN   TestCheckScanErrorsFailureOnly
+=== RUN   TestCheckScanErrorsFailureOnly/healthy
+=== RUN   TestCheckScanErrorsFailureOnly/failure_then_clean
+    lifecycle_check_test.go:215: earlier failed batch backlog cleared at same-pass successful EOF
+--- FAIL: TestCheckScanErrorsFailureOnly (0.18s)
+    --- PASS: TestCheckScanErrorsFailureOnly/healthy (0.11s)
+    --- FAIL: TestCheckScanErrorsFailureOnly/failure_then_clean (0.07s)
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	1.078s
+FAIL

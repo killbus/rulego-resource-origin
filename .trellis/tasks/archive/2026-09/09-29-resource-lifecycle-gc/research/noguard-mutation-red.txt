@@ -1,0 +1,6 @@
+=== RUN   TestCheckGCSupersessionPointerGuard
+    lifecycle_check_test.go:333: A2: old GC damaged replacement catalog: "" open D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\check-tmp\tmp\TestCheckGCSupersessionPointerGuard3412452264\001\catalog\3675079f0bbb3ef1f2ac109228478534d2b744b909b60f0749664774673a5ab2.json: The system cannot find the file specified.
+--- FAIL: TestCheckGCSupersessionPointerGuard (0.04s)
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	0.979s
+FAIL

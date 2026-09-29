@@ -1,0 +1,9 @@
+--- FAIL: TestCleanupRestartAtRetirementBoundaries (0.40s)
+    --- FAIL: TestCleanupRestartAtRetirementBoundaries/partial_delete (0.06s)
+        testing.go:1369: TempDir RemoveAll cleanup: unlinkat D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestCleanupRestartAtRetirementBoundariespartial_delete209600830\001\catalog: The directory is not empty.
+--- FAIL: TestCleanupSlowDeleteAllowsPublicationAndCloseJoins (0.05s)
+    testing.go:1369: TempDir RemoveAll cleanup: unlinkat D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestCleanupSlowDeleteAllowsPublicationAndCloseJoins4070315630\001\catalog: The directory is not empty.
+[INFO] Performing immediate shutdown
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	8.073s
+FAIL

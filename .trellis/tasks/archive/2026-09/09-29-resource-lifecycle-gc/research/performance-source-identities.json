@@ -1,0 +1,48 @@
+{
+  "baseline": {
+    "ref": "b22d4b8a08a8a46d3e01b5ced7a154642f710e5c",
+    "files": {
+      "cleanup.go": {
+        "sha256": "c4fc7f4945ce996f5bb3ac50e0842c94cbda24b37b3cc7a1958efed0820f99b8",
+        "matches_ref_normalized": true
+      },
+      "node.go": {
+        "sha256": "7b20d0211b6a3b373fbaff44a860fd6dc602583960929f9b16402068d521c3f6",
+        "matches_ref_normalized": true
+      },
+      "origin.go": {
+        "sha256": "3a433dd415dd234661cbc57fdd1b393033e419f4f96e58ca5a3aacc748bb0c19",
+        "matches_ref_normalized": true
+      },
+      "plugin.go": {
+        "sha256": "8b4f6e55585d99a9be5d30e281d281ceaf63c2c5416d3765c1ebd678a3471799",
+        "matches_ref_normalized": true
+      }
+    }
+  },
+  "candidate": {
+    "ref": "153ab1d34a5b4ec894b53622adce037af827f0b3",
+    "files": {
+      "cleanup.go": {
+        "sha256": "3fb2b697c033062bf9f169c030e549496b399aad45a57b25ea6b479856dee1c5",
+        "matches_ref_normalized": true
+      },
+      "node.go": {
+        "sha256": "aebd0dd89a0c49b2636a9b4e746745017e5a197518cb7644dc200b2bc2e9f489",
+        "matches_ref_normalized": true
+      },
+      "origin.go": {
+        "sha256": "c80c18b494f976587428c39fd7309e2f06084f237676435bd4f8af1d0fb57698",
+        "matches_ref_normalized": true
+      },
+      "plugin.go": {
+        "sha256": "8b4f6e55585d99a9be5d30e281d281ceaf63c2c5416d3765c1ebd678a3471799",
+        "matches_ref_normalized": true
+      },
+      "reconcile_gc.go": {
+        "sha256": "25946413ad8f60aa8dd52de150382a2682dcf2e79a48186fc04d48ee0092686f",
+        "matches_ref_normalized": true
+      }
+    }
+  }
+}

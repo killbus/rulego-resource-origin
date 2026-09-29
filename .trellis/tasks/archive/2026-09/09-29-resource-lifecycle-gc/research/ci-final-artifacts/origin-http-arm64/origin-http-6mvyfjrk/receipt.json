@@ -1,0 +1,19 @@
+{
+  "runtime": "ghcr.io/killbus/rulego-server@sha256:8594e773b9d0cf2afa1fd8af0744b9eea5a500006e8847c149ed36cc1fcb559a",
+  "platform": "linux/arm64",
+  "pluginSha256": "9f6efbc75f6fa51b773bfd9ca0c77540b1fbd351832e868b35a371212e37232a",
+  "observedTerminalStatuses": [
+    404
+  ],
+  "checks": [
+    "202/307/404",
+    "GET/206/416/304",
+    "parent-child expiry",
+    "terminal GC to 404",
+    "terminal catalog removal",
+    "autonomous expiry",
+    "trash removal",
+    "restart preservation",
+    "process-kill restart preservation"
+  ]
+}

@@ -1,0 +1,15 @@
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\github.com\ianlancetaylor\demangle\@v\v0.0.0-20220319035150-800ac71e25c2.mod458043209.tmp: Access is denied.
+go: writing go.mod cache: mkdir C:\Users\ying\go\pkg\mod\cache\download\github.com\dop251\goja_nodejs: Access is denied.
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\github.com\chzyer\readline\@v\v1.5.0.mod837547917.tmp: Access is denied.
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\golang.org\x\sys\@v\v0.0.0-20220310020820-b874c991c1a5.mod877519391.tmp: Access is denied.
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\github.com\rogpeppe\go-internal\@v\v1.6.1.mod590654681.tmp: Access is denied.
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\github.com\dop251\goja\@v\v0.0.0-20211022113120-dc8c55024d06.mod86563982.tmp: Access is denied.
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\golang.org\x\sys\@v\v0.19.0.mod739254078.tmp: Access is denied.
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\github.com\chzyer\test\@v\v0.0.0-20210722231415-061457976a23.mod215314096.tmp: Access is denied.
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\github.com\chzyer\logex\@v\v1.2.0.mod242284232.tmp: Access is denied.
+go: writing go.mod cache: mkdir C:\Users\ying\go\pkg\mod\cache\download\github.com\dop251\goja_nodejs: Access is denied.
+go: writing go.mod cache: open C:\Users\ying\go\pkg\mod\cache\download\github.com\dlclark\regexp2\@v\v1.4.1-0.20201116162257-a2a8dda75c91.mod980603964.tmp: Access is denied.
+# github.com/killbus/rulego-resource-origin
+open C:\Users\ying\AppData\Local\go-build\5e\5ec44a0c85fc1b9f012391482e85c9d7adecc2015bba7cdb678407c465822c11-d: Access is denied.
+FAIL	github.com/killbus/rulego-resource-origin [setup failed]
+FAIL

@@ -1,0 +1,69 @@
+=== RUN   TestCheckScannerBatchBoundAndFairness
+--- PASS: TestCheckScannerBatchBoundAndFairness (0.25s)
+=== RUN   TestCheckHideReservationProtectsMissingRecord
+--- PASS: TestCheckHideReservationProtectsMissingRecord (0.76s)
+=== RUN   TestCheckScanErrorsFailureOnly
+=== RUN   TestCheckScanErrorsFailureOnly/healthy
+=== RUN   TestCheckScanErrorsFailureOnly/failure_then_clean
+--- PASS: TestCheckScanErrorsFailureOnly (0.25s)
+    --- PASS: TestCheckScanErrorsFailureOnly/healthy (0.11s)
+    --- PASS: TestCheckScanErrorsFailureOnly/failure_then_clean (0.14s)
+=== RUN   TestCheckLateRecreationAndQuarantineRestart
+--- PASS: TestCheckLateRecreationAndQuarantineRestart (0.04s)
+=== RUN   TestCheckScanFailureDiagnostics
+--- PASS: TestCheckScanFailureDiagnostics (0.01s)
+=== RUN   TestCheckGCSupersessionPointerGuard
+--- PASS: TestCheckGCSupersessionPointerGuard (0.04s)
+=== RUN   TestCheckScannerCannotClaimLivePersistTemp
+--- PASS: TestCheckScannerCannotClaimLivePersistTemp (0.02s)
+=== RUN   TestIndependentTerminalCatalogAndResolveReleased
+--- PASS: TestIndependentTerminalCatalogAndResolveReleased (0.41s)
+=== RUN   TestIndependentDeliveredWaiterSurvivesGC
+--- PASS: TestIndependentDeliveredWaiterSurvivesGC (0.02s)
+=== RUN   TestIndependentOldDeleteBarrierPreservesReplacement
+--- PASS: TestIndependentOldDeleteBarrierPreservesReplacement (0.04s)
+=== RUN   TestIndependentPendingChildDoesNotRetainParent
+=== RUN   TestIndependentPendingChildDoesNotRetainParent/parent_gc=false
+=== RUN   TestIndependentPendingChildDoesNotRetainParent/parent_gc=true
+--- PASS: TestIndependentPendingChildDoesNotRetainParent (0.08s)
+    --- PASS: TestIndependentPendingChildDoesNotRetainParent/parent_gc=false (0.04s)
+    --- PASS: TestIndependentPendingChildDoesNotRetainParent/parent_gc=true (0.04s)
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure/write
+=== RUN   TestIndependentDeletionProceedsDuringCatalogFailure/rename
+--- PASS: TestIndependentDeletionProceedsDuringCatalogFailure (0.06s)
+    --- PASS: TestIndependentDeletionProceedsDuringCatalogFailure/write (0.03s)
+    --- PASS: TestIndependentDeletionProceedsDuringCatalogFailure/rename (0.03s)
+=== RUN   TestIndependentNoTrafficRemnantsAndActiveProtection
+--- PASS: TestIndependentNoTrafficRemnantsAndActiveProtection (0.07s)
+=== RUN   TestIndependentFailingOldestDoesNotStarveHealthyCleanup
+--- PASS: TestIndependentFailingOldestDoesNotStarveHealthyCleanup (0.72s)
+=== RUN   TestIndependentHideReservationSurvivesRepeatedDiscovery
+--- PASS: TestIndependentHideReservationSurvivesRepeatedDiscovery (0.06s)
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/claimed
+=== RUN   TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/catalog_unlinked
+--- PASS: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink (0.10s)
+    --- PASS: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/claimed (0.05s)
+    --- PASS: TestIndependentRecoveryClaimedRemnantAndCatalogUnlink/catalog_unlinked (0.05s)
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/catalog
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/staging
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/ready
+=== RUN   TestIndependentManagedDirectoryAnomalyFailsStartup/trash
+--- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup (0.05s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/catalog (0.01s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/staging (0.01s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/ready (0.01s)
+    --- PASS: TestIndependentManagedDirectoryAnomalyFailsStartup/trash (0.01s)
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety/leaf
+=== RUN   TestIndependentSymlinkLeafAndManagedRootSafety/managed_directory
+--- PASS: TestIndependentSymlinkLeafAndManagedRootSafety (0.03s)
+    --- PASS: TestIndependentSymlinkLeafAndManagedRootSafety/leaf (0.02s)
+    --- PASS: TestIndependentSymlinkLeafAndManagedRootSafety/managed_directory (0.02s)
+=== RUN   TestIndependentCatalogTempPersistBarrier
+--- PASS: TestIndependentCatalogTempPersistBarrier (0.02s)
+PASS
+ok  	github.com/killbus/rulego-resource-origin	3.981s
+exit_code=0

@@ -1,0 +1,66 @@
+package main
+ 
+ import (
+ 	"context"
+ 	"fmt"
+ 	"os"
+ 	"path/filepath"
+ 	"testing"
+ 	"time"
+ )
+ 
+ func perfManager(b *testing.B) *originManager {
+ 	b.Helper()
+ 	m, err := newOriginManager(managerConfig{Root: b.TempDir(), StaticURLPrefix: "/perf",
+ 		MaxRetainedBytes: 1 << 30, MaxResourceBytes: 1 << 20, MaxTTL: time.Hour, MaxProduction: time.Hour})
+ 	if err != nil {
+ 		b.Fatal(err)
+ 	}
+ 	b.Cleanup(func() { _ = m.Close() })
+ 	return m
+ }
+ 
+ func perfPublish(b *testing.B, m *originManager, i int) {
+ 	b.Helper()
+ 	res, err := m.Acquire(context.Background(), acquireRequest{Key: fmt.Sprintf("perf-%d", i),
+ 		Fingerprint: "perf-v1", TTL: time.Hour, MaxBytes: 4096, ProductionTimeout: time.Hour})
+ 	if err != nil {
+ 		b.Fatal(err)
+ 	}
+ 	if !res.Produce {
+ 		b.Fatal("expected produce lease")
+ 	}
+ 	if err := os.WriteFile(filepath.Join(res.Descriptor.StagingDir, "data"), []byte("payload"), 0o600); err != nil {
+ 		b.Fatal(err)
+ 	}
+ 	if _, err := m.Commit(commitRequest{ResourceID: res.Descriptor.ResourceID, Generation: res.Descriptor.Generation, Entrypoint: "data"}); err != nil {
+ 		b.Fatal(err)
+ 	}
+ }
+ 
+ func BenchmarkPublishOnly(b *testing.B) {
+ 	m := perfManager(b)
+ 	b.ResetTimer()
+ 	for i := 0; i < b.N; i++ {
+ 		perfPublish(b, m, i)
+ 	}
+ }
+ 
+func BenchmarkPublishFailChurn(b *testing.B) {
+	m := perfManager(b)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		res, err := m.Acquire(context.Background(), acquireRequest{Key: fmt.Sprintf("churn-%d", i),
+			Fingerprint: "perf-v1", TTL: time.Hour, MaxBytes: 4096, ProductionTimeout: time.Hour})
+		if err != nil {
+			b.Fatal(err)
+		}
+		if !res.Produce {
+			b.Fatal("expected produce lease")
+		}
+		if _, err := m.Fail(failRequest{ResourceID: res.Descriptor.ResourceID, Generation: res.Descriptor.Generation, Kind: "perf"}); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+ 

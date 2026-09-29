@@ -1,0 +1,20 @@
+--- candidate/reconcile_gc.go
++++ gc-disabled/reconcile_gc.go
+@@ -67,17 +67,6 @@
+ // Completion is attested by this work, never inferred from an absent map entry.
+ // Pointer validation and unlink share the publication critical section.
+ func (m *originManager) collectTerminalLocked(work *cleanupWork) error {
+-	r := work.record
+-	if m.records[r.ResourceID] != r || (r.State != stateFailed && r.State != stateExpired) {
+-		return nil
+-	}
+-	if !work.removed || work.persist || work.hide || work.inflight || m.waiters[r.ResourceID] != nil {
+-		return errors.New("terminal cleanup incomplete")
+-	}
+-	if err := m.hooks.remove(filepath.Join(m.catalogDir, r.ResourceID+".json")); err != nil && !errors.Is(err, fs.ErrNotExist) {
+-		return err
+-	}
+-	delete(m.records, r.ResourceID)
+ 	return nil
+ }
+ 

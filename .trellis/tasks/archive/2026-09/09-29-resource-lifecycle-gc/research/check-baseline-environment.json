@@ -1,0 +1,28 @@
+{
+  "baseline": "b22d4b8a08a8a46d3e01b5ced7a154642f710e5c",
+  "snapshot": "D:\\Repositories\\rulego-resource-origin\\.trellis\\tasks\\09-29-resource-lifecycle-gc\\research\\check-baseline-snapshot",
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "-run",
+    "^TestIndependent",
+    "./..."
+  ],
+  "platform": "Windows-11-10.0.22621-SP0",
+  "go_version": "go version go1.25.1 windows/amd64",
+  "go_env": "{\n\t\"CGO_ENABLED\": \"0\",\n\t\"GOARCH\": \"amd64\",\n\t\"GOCACHE\": \"D:\\\\Repositories\\\\rulego-resource-origin\\\\.trellis\\\\tasks\\\\09-29-resource-lifecycle-gc\\\\research\\\\check-baseline-snapshot\\\\.go-cache\",\n\t\"GOMODCACHE\": \"C:\\\\Users\\\\ying\\\\go\\\\pkg\\\\mod\",\n\t\"GOOS\": \"windows\"\n}\n",
+  "environment_overrides": {
+    "TEMP": "D:\\Repositories\\rulego-resource-origin\\.trellis\\tasks\\09-29-resource-lifecycle-gc\\research\\check-baseline-snapshot\\.test-temp",
+    "TMP": "D:\\Repositories\\rulego-resource-origin\\.trellis\\tasks\\09-29-resource-lifecycle-gc\\research\\check-baseline-snapshot\\.test-temp",
+    "GOCACHE": "D:\\Repositories\\rulego-resource-origin\\.trellis\\tasks\\09-29-resource-lifecycle-gc\\research\\check-baseline-snapshot\\.go-cache"
+  },
+  "independent_test_sha256": "27f36d231a5f105e9caf214491cc0171204c5ad37b6c1d04ab7b27dd11725366",
+  "archive_sha256": "bd3dd82dfa3e39f91dcaf11b3537cbb16d4da8e7867bd453a269a63a5f2372b0",
+  "unit_exit_code": 1,
+  "vet_exit_code": 0,
+  "gofmt_clean": true,
+  "snapshot_retained": true,
+  "snapshot_cleanup": "Automatic approval review rejected removal: blocked by policy (no detailed reason supplied). Removal was not retried."
+}

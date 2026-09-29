@@ -1,0 +1,8 @@
+--- FAIL: TestIndependentCatalogTempPersistBarrier (0.02s)
+    testing.go:1369: TempDir RemoveAll cleanup: unlinkat D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\test-tmp\TestIndependentCatalogTempPersistBarrier1299946250\001\catalog: The directory is not empty.
+[INFO] Performing immediate shutdown
+--- FAIL: TestParentExpiryAndRestartReconciliation (0.08s)
+    origin_test.go:320: expired parent = main.resourceDescriptor{State:"expired", ResourceID:"e6916c93cedb51ee8f03b34fbff9d9a8a4cd1178113df53ed46fb92e556c656c", Generation:"", StagingDir:"", PublishBy:<nil>, MaxBytes:0, Entrypoint:"manifest", Members:[]string{"manifest"}, Size:1, PublishedAt:<nil>, ExpiresAt:<nil>, URL:"", FailureKind:""}, <nil>
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	10.116s
+FAIL

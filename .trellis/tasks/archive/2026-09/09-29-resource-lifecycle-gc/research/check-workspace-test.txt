@@ -1,0 +1,11 @@
+--- FAIL: TestCleanupDeletionDoesNotWaitForCatalogRecovery (0.08s)
+    --- FAIL: TestCleanupDeletionDoesNotWaitForCatalogRecovery/write (0.04s)
+        testing.go:1369: TempDir RemoveAll cleanup: unlinkat D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\check-tmp\tmp\TestCleanupDeletionDoesNotWaitForCatalogRecoverywrite3712402833\001\catalog: The directory is not empty.
+--- FAIL: TestCleanupFailedAcquireDoesNotLeakStaging (0.03s)
+    testing.go:1369: TempDir RemoveAll cleanup: unlinkat D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\check-tmp\tmp\TestCleanupFailedAcquireDoesNotLeakStaging1294676286\001\catalog: The directory is not empty.
+[INFO] Performing immediate shutdown
+--- FAIL: TestFailureAndProductionTimeoutWakeWaiters (0.05s)
+    testing.go:1369: TempDir RemoveAll cleanup: unlinkat D:\Repositories\rulego-resource-origin\.trellis\tasks\09-29-resource-lifecycle-gc\research\check-tmp\tmp\TestFailureAndProductionTimeoutWakeWaiters3859389104\001\catalog: The directory is not empty.
+FAIL
+FAIL	github.com/killbus/rulego-resource-origin	9.708s
+FAIL

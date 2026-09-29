@@ -1,0 +1,1 @@
+ok  	github.com/killbus/rulego-resource-origin	9.249s
