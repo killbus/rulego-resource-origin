@@ -143,6 +143,10 @@ type originManager struct {
 	diagnostic       func(cleanupEvent)
 	nextDiagnostic   time.Time
 	cleanupEvents    []cleanupEvent
+	residue          [4]residueCursor
+	scanRoot         int
+	scanNext         time.Time
+	scanErrors       [4]*cleanupWork
 }
 
 type publicationWaiter struct {
@@ -161,6 +165,9 @@ func newOriginManager(config managerConfig) (*originManager, error) {
 	root, err := filepath.Abs(config.Root)
 	if err != nil {
 		return nil, fmt.Errorf("canonicalize root: %w", err)
+	}
+	if err := validateDirectoryPath(root, true); err != nil {
+		return nil, fmt.Errorf("validate root before creation: %w", err)
 	}
 	if err := os.MkdirAll(root, 0o700); err != nil {
 		return nil, fmt.Errorf("create root: %w", err)
@@ -196,11 +203,23 @@ func newOriginManager(config managerConfig) (*originManager, error) {
 	if config.hooks != nil {
 		m.hooks = *config.hooks
 	}
+	if m.hooks.remove == nil {
+		m.hooks.remove = os.Remove
+	}
 	m.now = m.hooks.now
+	// Validate every existing managed path before creating any of them.
+	for _, dir := range []string{m.catalogDir, m.stagingDir, m.readyDir, m.trashDir} {
+		if err := validateDirectoryPath(dir, true); err != nil {
+			return nil, err
+		}
+	}
 	for _, dir := range []string{m.catalogDir, m.stagingDir, m.readyDir, m.trashDir} {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
 			return nil, fmt.Errorf("create origin directory: %w", err)
 		}
+	}
+	if err := m.checkManagedPaths(); err != nil {
+		return nil, err
 	}
 	if err := m.reconcile(); err != nil {
 		return nil, err
@@ -608,11 +627,17 @@ func (m *originManager) reconcile() error {
 		return fmt.Errorf("read catalog: %w", err)
 	}
 	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+		// Only regular files with an ID-shaped name are catalog records. Unknown
+		// names and directories belong to residue cleanup, even with a .json suffix.
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" || !validHex(strings.TrimSuffix(entry.Name(), ".json"), sha256.Size*2) {
 			continue
 		}
-		if entry.Type()&os.ModeSymlink != 0 {
-			return problem("invalid_catalog", "catalog record cannot be a symlink")
+		info, err := os.Lstat(filepath.Join(m.catalogDir, entry.Name()))
+		if err != nil {
+			return fmt.Errorf("inspect catalog record: %w", err)
+		}
+		if !info.Mode().IsRegular() {
+			return problem("invalid_catalog", "catalog record must be a regular file")
 		}
 		payload, err := os.ReadFile(filepath.Join(m.catalogDir, entry.Name()))
 		if err != nil {
@@ -690,7 +715,26 @@ func (m *originManager) reconcile() error {
 			return fmt.Errorf("remove abandoned trash entry: %w", err)
 		}
 	}
-	clear(m.garbage) // Startup has synchronously removed all owned residue.
+	// Startup has synchronously removed all owned payload. Its completed work
+	// attests recovery responsibility before terminal metadata is collected.
+	clear(m.garbage)
+	for _, record := range m.records {
+		if record.State == stateFailed || record.State == stateExpired {
+			work := m.queueCleanupLocked(record, false, false)
+			work.removed = true
+			if err := m.collectTerminalLocked(work); err != nil {
+				return err
+			}
+			delete(m.garbage, record.ResourceID+"-"+record.Generation)
+		}
+	}
+	for _, entry := range entries {
+		if !strings.HasSuffix(entry.Name(), ".json") || entry.IsDir() || !validHex(strings.TrimSuffix(entry.Name(), ".json"), sha256.Size*2) {
+			if err := m.hooks.removeAll(filepath.Join(m.catalogDir, entry.Name())); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -719,6 +763,7 @@ func (m *originManager) signal() {
 
 func (m *originManager) expiryLoop() {
 	defer close(m.done)
+	defer m.closeResidueCursors()
 	for {
 		select {
 		case <-m.stop:
@@ -726,11 +771,12 @@ func (m *originManager) expiryLoop() {
 		default:
 		}
 		m.sweep()
+		m.scanResidueBatch()
 		m.emitCleanupEvents()
 		m.cleanupBatch()
 		m.emitCleanupEvents()
 		m.mu.Lock()
-		var next time.Time
+		next := m.scanNext
 		for _, record := range m.records {
 			deadline := time.Time{}
 			switch record.State {

@@ -150,8 +150,8 @@ func cleanupLogger(logger types.Logger) func(cleanupEvent) {
 		if event.Recovered {
 			log = logger.Infof
 		}
-		log("resourceOrigin cleanup operation=%s resource=%s generation=%s class=%s failures=%d pending=%d recovered=%t",
-			event.Operation, event.ResourceID, event.Generation, event.ErrorClass, event.Attempts, event.Pending, event.Recovered)
+		log("resourceOrigin cleanup operation=%s resource=%s generation=%s class=%s failures=%d pending=%d oldest_wait=%s recovered=%t",
+			event.Operation, event.ResourceID, event.Generation, event.ErrorClass, event.Attempts, event.Pending, event.OldestWait, event.Recovered)
 	}
 }
 

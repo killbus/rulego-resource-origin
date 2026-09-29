@@ -316,7 +316,7 @@ func TestParentExpiryAndRestartReconciliation(t *testing.T) {
 	m2.records[child.ResourceID].ExpiresAt = time.Now().Add(-time.Second)
 	m2.mu.Unlock()
 	m2.sweep()
-	if got, err := m2.Resolve(parent.ResourceID, ""); err != nil || got.State != stateExpired {
+	if got, err := m2.Resolve(parent.ResourceID, ""); err != nil || (got.State != stateExpired && got.State != stateNotFound) {
 		t.Fatalf("expired parent = %#v, %v", got, err)
 	}
 	if _, err := m2.Acquire(context.Background(), childRequest); errorKind(err) != "parent_unavailable" {
@@ -370,7 +370,7 @@ func TestRestartAbandonsPendingAndRemovesOwnedOrphans(t *testing.T) {
 	}
 	defer m.Close()
 	resolved, err := m.Resolve(pending.Descriptor.ResourceID, "")
-	if err != nil || resolved.State != stateFailed || resolved.FailureKind != "abandoned" {
+	if err != nil || resolved.State != stateNotFound {
 		t.Fatalf("abandoned resolve = %#v, %v", resolved, err)
 	}
 	for _, path := range []string{pending.Descriptor.StagingDir, readyOrphan, trashOrphan} {

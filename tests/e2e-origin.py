@@ -194,8 +194,32 @@ def main():
             time.sleep(0.1)
         else:
             raise AssertionError('expired static resources remain accessible')
+        # Terminal metadata has no retention period. A healthy worker may have
+        # collected it before the first Resolve, so observing 410 is optional.
+        terminal_statuses = set()
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            collected = True
+            for resource in (parent, child):
+                status, headers, body = request('POST', '/origin-test', {
+                    'operation': 'resolve', 'resourceId': resource['resourceId'],
+                })
+                terminal_statuses.add(status)
+                assert status in (410, 404), (status, body)
+                descriptor = json.loads(body)
+                assert descriptor['state'] == ('expired' if status == 410 else 'not_found')
+                assert not descriptor.get('url') and 'location' not in headers
+                collected = collected and status == 404
+            if collected:
+                break
+            time.sleep(0.1)
+        else:
+            raise AssertionError('terminal metadata did not converge to not_found')
+        archive = docker('cp', name + ':/app/data/resource-origin/catalog', '-')
+        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+            catalog_names = {Path(member.name).name for member in tar.getmembers()}
         for resource in (parent, child):
-            operation(410, operation='resolve', resourceId=resource['resourceId'])
+            assert resource['resourceId'] + '.json' not in catalog_names
         assert request('GET', location)[2] == payload
         # Verify physical trash removal after healthy expiry, independently of REST state.
         deadline = time.monotonic() + 5
@@ -211,7 +235,9 @@ def main():
         else:
             raise AssertionError('healthy expiry left trash entries')
         receipt = {'runtime': runtime, 'platform': platform, 'pluginSha256': digest,
-                   'checks': ['202/307/404/410', 'GET/206/416/304', 'parent-child expiry',
+                   'observedTerminalStatuses': sorted(terminal_statuses),
+                   'checks': ['202/307/404', 'GET/206/416/304', 'parent-child expiry',
+                              'terminal GC to 404', 'terminal catalog removal',
                               'autonomous expiry', 'trash removal', 'restart preservation']}
         (work / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
         print(json.dumps(receipt, indent=2))
