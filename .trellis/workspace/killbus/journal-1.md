@@ -46,3 +46,25 @@ Implemented generation-owned cleanup retries and independent catalog recovery wi
 ### Status
 
 [OK] **Completed**
+
+
+## Session 3: Resource lifecycle GC verified in GitHub CI
+
+**Date**: 2026-09-30
+**Task**: Resource lifecycle GC verified in GitHub CI
+**Branch**: `feat/resource-lifecycle-gc`
+
+### Summary
+
+Completed A1-A7: terminal catalog GC, bounded idle residue scans, generation/path safety, diagnostic regression fixes, independent baseline and mutation controls, real subprocess crash recovery. Final GitHub CI 36604788001 passed Linux unit/vet/race and pinned amd64/arm64 native HTTP plus SIGKILL restart. Preserved historical Windows teardown failures and noisy performance limits; task archived with receipts.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `153ab1d` | (see git log) |
+| `804d88e` | (see git log) |
+
+### Status
+
+[OK] **Completed**
