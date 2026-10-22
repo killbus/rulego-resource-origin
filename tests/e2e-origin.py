@@ -177,6 +177,9 @@ def main():
         assert headers['content-range'] == 'bytes 0-15/' + str(len(payload))
         assert request('GET', location, headers={'Range': 'bytes=999999999-'})[0] == 416
         assert request('GET', location, headers={'If-Modified-Since': modified})[0] == 304
+        status, headers, body = request('HEAD', location)
+        assert status == 200 and body == b''
+        assert int(headers['content-length']) == len(payload)
         operation(404, operation='resolve', resourceId=stable['resourceId'], member='missing.ts')
         docker('restart', name)
         wait_ready()

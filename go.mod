@@ -2,7 +2,7 @@ module github.com/killbus/rulego-resource-origin
 
 go 1.25.0
 
-require github.com/rulego/rulego v0.36.1-0.20260802040353-2ec085f29027
+require github.com/rulego/rulego v1.0.0
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
