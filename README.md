@@ -53,9 +53,10 @@ Rule-chain instances borrow that manager with only:
 
 One process and one local filesystem root form the coordination boundary. Do
 not configure multiple owners for the same root or place it on a network
-filesystem. RuleGo Server `v0.37.0` returns `405` for `HEAD` on static mappings;
-`GET`, conditional `GET` through `Last-Modified`, and valid/invalid byte ranges
-work, while clients that require `HEAD` need that capability from the host.
+filesystem. RuleGo Server serves `HEAD` for static mappings from `v1.0.0`
+onward, alongside `GET`, conditional `GET` through `Last-Modified`, and valid
+or invalid byte ranges; `v0.37.x` registered only `GET` there, so `HEAD` got
+`405` and clients that require it needed a newer host.
 
 ## Operations
 

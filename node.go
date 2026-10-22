@@ -46,7 +46,7 @@ func (*resourceOriginNode) Def() types.ComponentForm {
 		Category:      "storage",
 		Label:         "resource origin",
 		Desc:          "Publish lifecycle-bound transformation outputs through RuleGo static mapping",
-		Version:       "0.1.3",
+		Version:       "0.2.0",
 		ComponentKind: types.ComponentKindNative,
 		RelationTypes: &relations,
 	}
