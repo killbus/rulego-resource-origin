@@ -9,12 +9,20 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      # actions/checkout v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      # actions/setup-go v5.6.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
           go-version-file: go.mod
           cache: true
@@ -50,8 +58,10 @@ jobs:
             machine: aarch64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          persist-credentials: false
           path: plugin
       - name: Read immutable Plugin ABI release
         run: |
@@ -132,14 +142,16 @@ jobs:
         run: python3 plugin/tests/e2e-origin.py --plugin "plugin/dist/$PLUGIN_ARTIFACT"
       - name: Preserve runtime integration evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: origin-http-${{ matrix.arch }}
           path: |
             plugin/tmp/origin-http-*/receipt.json
             plugin/tmp/origin-http-*/runtime.log
           if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
+      # actions/upload-artifact v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: plugin-linux-${{ matrix.arch }}
           path: |
@@ -151,13 +163,17 @@ jobs:
   release-metadata:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
       - name: Collect release metadata
         run: |
           mkdir dist
           cp LICENSE README.md compatibility.json plugin-abi-release.json dist/
           cp examples/resource-origin/chain.json dist/example-chain.json
-      - uses: actions/upload-artifact@v4
+      # actions/upload-artifact v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: release-metadata
           path: dist/
