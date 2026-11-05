@@ -379,22 +379,34 @@ func (m *originManager) Commit(request commitRequest) (resourceDescriptor, error
 	staging := filepath.Join(m.stagingDir, record.ResourceID, record.Generation)
 	members, size, err := scanRegularFiles(staging, record.MaxBytes)
 	if err != nil {
-		return resourceDescriptor{}, &originError{Kind: "invalid_publication", Err: err}
+		return resourceDescriptor{}, m.commitTerminalFailureLocked(
+			record, "invalid_publication", &originError{Kind: "invalid_publication", Err: err},
+		)
 	}
 	if _, found := slices.BinarySearch(members, entrypoint); !found {
-		return resourceDescriptor{}, problem("invalid_publication", "entrypoint is not a staged regular file")
+		return resourceDescriptor{}, m.commitTerminalFailureLocked(
+			record, "invalid_publication", problem("invalid_publication", "entrypoint is not a staged regular file"),
+		)
 	}
 	if size > m.maxResourceBytes || size > m.maxRetainedBytes-m.retainedBytes {
-		return resourceDescriptor{}, problem("storage_limit", "publication exceeds retained-byte limit")
+		return resourceDescriptor{}, m.commitTerminalFailureLocked(
+			record, "storage_limit", problem("storage_limit", "publication exceeds retained-byte limit"),
+		)
 	}
 	ready := filepath.Join(m.readyDir, record.ResourceID)
 	if _, err := os.Lstat(ready); err == nil {
-		return resourceDescriptor{}, problem("conflict", "ready resource path already exists")
+		return resourceDescriptor{}, m.commitTerminalFailureLocked(
+			record, "conflict", problem("conflict", "ready resource path already exists"),
+		)
 	} else if !errors.Is(err, fs.ErrNotExist) {
-		return resourceDescriptor{}, fmt.Errorf("inspect ready path: %w", err)
+		return resourceDescriptor{}, m.commitTerminalFailureLocked(
+			record, "publication_failed", fmt.Errorf("inspect ready path: %w", err),
+		)
 	}
 	if err := m.hooks.rename(staging, ready); err != nil {
-		return resourceDescriptor{}, fmt.Errorf("publish resource: %w", err)
+		return resourceDescriptor{}, m.commitTerminalFailureLocked(
+			record, "publication_failed", fmt.Errorf("publish resource: %w", err),
+		)
 	}
 	previous := *record
 	record.State = stateReady
@@ -412,11 +424,9 @@ func (m *originManager) Commit(request commitRequest) (resourceDescriptor, error
 		if rollbackErr := m.hooks.rename(ready, staging); rollbackErr != nil {
 			// Failed publication cannot leave an untracked ready tree that a
 			// later generation might overwrite. Retire it and reserve its ID.
-			record.State = stateFailed
-			record.FailureKind = "publication_failed"
-			work := m.queueCleanupLocked(record, true, true)
-			_ = m.prepareCleanupLocked(work)
-			m.notifyLocked(record)
+			m.terminalizeCommitFailureLocked(record, "publication_failed", true)
+		} else {
+			m.terminalizeCommitFailureLocked(record, "publication_failed", false)
 		}
 		return resourceDescriptor{}, err
 	}
@@ -426,6 +436,27 @@ func (m *originManager) Commit(request commitRequest) (resourceDescriptor, error
 	m.notifyLocked(record)
 	m.signal()
 	return m.descriptor(record, ""), nil
+}
+
+func (m *originManager) commitTerminalFailureLocked(record *originRecord, failureKind string, commitErr error) error {
+	_ = m.terminalizeCommitFailureLocked(record, failureKind, false)
+	return commitErr
+}
+
+func (m *originManager) terminalizeCommitFailureLocked(
+	record *originRecord, failureKind string, hideReadyPath bool,
+) error {
+	record.State = stateFailed
+	record.FailureKind = failureKind
+	record.Entrypoint = ""
+	record.Members = nil
+	record.Size = 0
+	record.PublishedAt = time.Time{}
+	record.ExpiresAt = time.Time{}
+	work := m.queueCleanupLocked(record, hideReadyPath, true)
+	err := m.prepareCleanupLocked(work)
+	m.notifyLocked(record)
+	return err
 }
 
 func (m *originManager) Fail(request failRequest) (resourceDescriptor, error) {
@@ -554,17 +585,7 @@ func (m *originManager) memberURL(resourceIDValue, member string) string {
 }
 
 func (m *originManager) failLocked(record *originRecord, kind string) error {
-	record.State = stateFailed
-	record.FailureKind = kind
-	record.Entrypoint = ""
-	record.Members = nil
-	record.Size = 0
-	record.PublishedAt = time.Time{}
-	record.ExpiresAt = time.Time{}
-	work := m.queueCleanupLocked(record, false, true)
-	err := m.prepareCleanupLocked(work)
-	m.notifyLocked(record)
-	return err
+	return m.terminalizeCommitFailureLocked(record, kind, false)
 }
 
 func (m *originManager) expireLocked(record *originRecord, now time.Time) error {

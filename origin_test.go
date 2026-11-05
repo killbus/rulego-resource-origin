@@ -5,10 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -456,6 +458,245 @@ func TestFailedGenerationWaiterDoesNotJoinRetry(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Fatal("waiter blocked on retry generation")
+	}
+}
+
+func startCommitWaiter(
+	t *testing.T, m *originManager, req acquireRequest,
+) (<-chan acquireResult, *observedContext) {
+	t.Helper()
+	ctx := &observedContext{Context: context.Background(), entered: make(chan struct{})}
+	result := make(chan acquireResult, 1)
+	go func() {
+		got, err := m.Acquire(ctx, req)
+		if err != nil {
+			t.Error(err)
+		}
+		result <- got
+	}()
+	select {
+	case <-ctx.entered:
+	case <-time.After(3 * time.Second):
+		t.Fatal("waiter did not bind before commit")
+	}
+	return result, ctx
+}
+
+func writeStagedFile(t *testing.T, lease resourceDescriptor, name, value string) {
+	t.Helper()
+	if err := os.MkdirAll(lease.StagingDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(lease.StagingDir, name), []byte(value), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func commitWaiter(
+	t *testing.T, m *originManager, req acquireRequest, lease resourceDescriptor, entrypoint string,
+) (<-chan acquireResult, error) {
+	t.Helper()
+	waiter, _ := startCommitWaiter(t, m, req)
+	_, err := m.Commit(commitRequest{lease.ResourceID, lease.Generation, entrypoint})
+	return waiter, err
+}
+
+func assertFailedWaiter(t *testing.T, waiter <-chan acquireResult, kind string) {
+	t.Helper()
+	select {
+	case got := <-waiter:
+		if got.Produce || got.Descriptor.State != stateFailed ||
+			got.Descriptor.FailureKind != kind || got.Descriptor.URL != "" {
+			t.Fatalf("waiter result = %#v, want failed/%s", got, kind)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatalf("waiter did not receive %s immediately", kind)
+	}
+}
+
+func TestCommitStorageLimitTerminalizesAndWakesWaiter(t *testing.T) {
+	config := cleanupConfig(t, nil)
+	config.MaxResourceBytes = config.MaxRetainedBytes
+	m := cleanupManager(t, config, true)
+	full := request("full")
+	full.MaxBytes = config.MaxResourceBytes
+	fullLease, err := m.Acquire(context.Background(), full)
+	if err != nil || !fullLease.Produce {
+		t.Fatalf("full acquire = %#v, %v", fullLease, err)
+	}
+	writeStagedFile(t, fullLease.Descriptor, "data", strings.Repeat("f", 4090))
+	if _, err := m.Commit(commitRequest{fullLease.Descriptor.ResourceID, fullLease.Descriptor.Generation, "data"}); err != nil {
+		t.Fatal(err)
+	}
+	limited := request("limited")
+	limited.MaxBytes = config.MaxResourceBytes
+	lease, err := m.Acquire(context.Background(), limited)
+	if err != nil || !lease.Produce {
+		t.Fatalf("limited acquire = %#v, %v", lease, err)
+	}
+	writeStagedFile(t, lease.Descriptor, "data", strings.Repeat("l", 10))
+	waiter, waiterCtx := startCommitWaiter(t, m, limited)
+	_, err = m.Commit(commitRequest{lease.Descriptor.ResourceID, lease.Descriptor.Generation, "data"})
+	if errorKind(err) != "storage_limit" {
+		t.Fatalf("commit caller error = %v", err)
+	}
+	assertFailedWaiter(t, waiter, "storage_limit")
+	if waiterCtx.Err() != nil {
+		t.Fatalf("waiter context ended before terminal result: %v", waiterCtx.Err())
+	}
+	if got, err := m.Resolve(lease.Descriptor.ResourceID, ""); err != nil || got.State != stateFailed || got.FailureKind != "storage_limit" {
+		t.Fatalf("terminal record = %#v, %v", got, err)
+	}
+	m.cleanupBatch()
+	assertGone(t, lease.Descriptor.StagingDir)
+	retry, err := m.Acquire(context.Background(), limited)
+	if err != nil || !retry.Produce || retry.Descriptor.Generation == lease.Descriptor.Generation {
+		t.Fatalf("retry acquire = %#v, %v", retry, err)
+	}
+}
+
+func TestCommitInvalidPublicationTerminalizesWaiter(t *testing.T) {
+	m := cleanupManager(t, cleanupConfig(t, nil), true)
+	lease, err := m.Acquire(context.Background(), request("invalid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeStagedFile(t, lease.Descriptor, "other.bin", "data")
+	waiter, err := commitWaiter(t, m, request("invalid"), lease.Descriptor, "missing.bin")
+	if errorKind(err) != "invalid_publication" {
+		t.Fatalf("commit caller error = %v", err)
+	}
+	assertFailedWaiter(t, waiter, "invalid_publication")
+	m.cleanupBatch()
+	if _, err := os.Stat(lease.Descriptor.StagingDir); err == nil || !errors.Is(err, fs.ErrNotExist) {
+		t.Fatal(err)
+	}
+}
+
+func TestCommitReadyConflictTerminalizesCurrentGeneration(t *testing.T) {
+	m := cleanupManager(t, cleanupConfig(t, nil), true)
+	lease, err := m.Acquire(context.Background(), request("conflict"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeStagedFile(t, lease.Descriptor, "data", "new")
+	if err := os.MkdirAll(filepath.Join(m.readyDir, lease.Descriptor.ResourceID), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	waiter, err := commitWaiter(t, m, request("conflict"), lease.Descriptor, "data")
+	if errorKind(err) != "conflict" {
+		t.Fatalf("commit caller error = %v", err)
+	}
+	assertFailedWaiter(t, waiter, "conflict")
+	if _, err := os.Stat(filepath.Join(m.readyDir, lease.Descriptor.ResourceID)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCommitReadyInspectionFailureSanitizesWaiter(t *testing.T) {
+	m := cleanupManager(t, cleanupConfig(t, nil), true)
+	lease, err := m.Acquire(context.Background(), request("inspect"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeStagedFile(t, lease.Descriptor, "data", "data")
+	// A NUL path component fails with an invalid-argument error rather than
+	// fs.ErrNotExist on every supported platform, which exercises the sanitized
+	// inspection-failure branch deterministically.
+	m.readyDir = filepath.Join(m.root, "\x00")
+	waiter, err := commitWaiter(t, m, request("inspect"), lease.Descriptor, "data")
+	if errorKind(err) != "" || errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("commit caller error = %v", err)
+	}
+	assertFailedWaiter(t, waiter, "publication_failed")
+	m.mu.Lock()
+	pending := len(m.garbage)
+	m.mu.Unlock()
+	if pending != 1 {
+		t.Fatalf("cleanup scheduling = %d, want 1", pending)
+	}
+}
+
+func TestCommitRenameFailureTerminalizesCurrentGeneration(t *testing.T) {
+	renameFailure := errors.New("rename publication unavailable")
+	hooks := defaultCleanupHooks()
+	var staging, ready string
+	hooks.rename = func(from, to string) error {
+		if staging != "" && from == staging && to == ready {
+			return renameFailure
+		}
+		return os.Rename(from, to)
+	}
+	m := cleanupManager(t, cleanupConfig(t, &hooks), true)
+	lease, err := m.Acquire(context.Background(), request("rename"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeStagedFile(t, lease.Descriptor, "data", "data")
+	staging = lease.Descriptor.StagingDir
+	ready = filepath.Join(m.readyDir, lease.Descriptor.ResourceID)
+	waiter, err := commitWaiter(t, m, request("rename"), lease.Descriptor, "data")
+	if !errors.Is(err, renameFailure) {
+		t.Fatalf("commit caller error = %v", err)
+	}
+	assertFailedWaiter(t, waiter, "publication_failed")
+	m.cleanupBatch()
+	assertGone(t, lease.Descriptor.StagingDir)
+}
+
+func TestCommitCatalogRollbackPreservesCauseAndWakesWaiter(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		failRollback bool
+	}{{"rollback_success", false}, {"rollback_failure", true}} {
+		t.Run(tc.name, func(t *testing.T) {
+			persistenceFailure := errors.New("catalog persistence unavailable")
+			hooks := defaultCleanupHooks()
+			rollbackFailure := tc.failRollback
+			fault := atomic.Bool{}
+			write := hooks.writeCatalog
+			hooks.writeCatalog = func(file *os.File, payload []byte) error {
+				if fault.Load() {
+					return persistenceFailure
+				}
+				return write(file, payload)
+			}
+			var lease acquireResult
+			var ready string
+			var hidReady atomic.Bool
+			rename := hooks.rename
+			hooks.rename = func(from, to string) error {
+				if ready != "" && from == ready && filepath.Base(filepath.Dir(to)) == "trash" {
+					hidReady.Store(true)
+				}
+				if rollbackFailure && ready != "" && from == ready && to == lease.Descriptor.StagingDir {
+					return os.ErrPermission
+				}
+				return rename(from, to)
+			}
+			m := cleanupManager(t, cleanupConfig(t, &hooks), true)
+			req := request("catalog")
+			var err error
+			lease, err = m.Acquire(context.Background(), req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeStagedFile(t, lease.Descriptor, "data", "data")
+			ready = filepath.Join(m.readyDir, lease.Descriptor.ResourceID)
+			waiter, _ := startCommitWaiter(t, m, req)
+			fault.Store(true)
+			_, err = m.Commit(commitRequest{lease.Descriptor.ResourceID, lease.Descriptor.Generation, "data"})
+			if !errors.Is(err, persistenceFailure) {
+				t.Fatalf("commit caller error = %v", err)
+			}
+			assertFailedWaiter(t, waiter, "publication_failed")
+			if hidReady.Load() != tc.failRollback {
+				t.Fatalf("ready hidden=%t, want %t", hidReady.Load(), tc.failRollback)
+			}
+			m.cleanupBatch()
+			assertGone(t, ready)
+			assertGone(t, lease.Descriptor.StagingDir)
+		})
 	}
 }
 

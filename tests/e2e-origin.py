@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import threading
 import time
 import uuid
 
@@ -59,7 +60,7 @@ def main():
         'metadata': {'nodes': [{
             'id': 'resource-origin', 'type': 'resourceOrigin', 'configuration': {
                 'root': './data/resource-origin', 'staticUrlPrefix': '/resources',
-                'maxRetainedBytes': 1048576, 'maxResourceBytes': 65536,
+                'maxRetainedBytes': 131072, 'maxResourceBytes': 65536,
                 'maxTtlMs': 600000, 'maxProductionMs': 60000,
             },
         }]},
@@ -132,12 +133,7 @@ def main():
 
     payload = b'origin-http-contract-' * 128
 
-    def publish(key, ttl, parent=''):
-        lease, _ = operation(202, operation='acquire', key=key, fingerprint='fixture-v1',
-                             ttlMs=ttl, maxBytes=65536, productionTimeoutMs=60000,
-                             parentResourceId=parent)
-        assert re.fullmatch(r'[0-9a-f]{64}', lease['resourceId'])
-        assert re.fullmatch(r'[0-9a-f]{32}', lease['generation'])
+    def stage(lease, content=payload):
         staging = '/app/data/resource-origin/staging/' + lease['resourceId'] + '/' + lease['generation']
         assert lease['stagingDir'] == staging
         archive = io.BytesIO()
@@ -145,11 +141,19 @@ def main():
             member = tarfile.TarInfo('artifact.ts')
             member.uid = member.gid = 65532
             member.mode = 0o600
-            member.size = len(payload)
+            member.size = len(content)
             member.mtime = int(time.time())
-            tar.addfile(member, io.BytesIO(payload))
+            tar.addfile(member, io.BytesIO(content))
         # The fixture producer installs one closed file with the runtime owner's UID.
         docker('cp', '-a', '-', name + ':' + staging, data=archive.getvalue())
+
+    def publish(key, ttl, parent='', content=payload):
+        lease, _ = operation(202, operation='acquire', key=key, fingerprint='fixture-v1',
+                             ttlMs=ttl, maxBytes=65536, productionTimeoutMs=60000,
+                             parentResourceId=parent)
+        assert re.fullmatch(r'[0-9a-f]{64}', lease['resourceId'])
+        assert re.fullmatch(r'[0-9a-f]{32}', lease['generation'])
+        stage(lease, content)
         ready, headers = operation(307, operation='commit', resourceId=lease['resourceId'],
                                    generation=lease['generation'], entrypoint='artifact.ts')
         assert ready['state'] == 'ready'
@@ -224,6 +228,39 @@ def main():
         for resource in (parent, child):
             assert resource['resourceId'] + '.json' not in catalog_names
         assert request('GET', location)[2] == payload
+
+        # A capacity-limited commit must return 507 and retire the generation
+        # instead of leaving an equivalent caller blocked until production timeout.
+        capacity = b'c' * 65536
+        publish('capacity-first', 600000, content=capacity)
+        limited, _ = operation(202, operation='acquire', key='capacity-second', fingerprint='fixture-v1',
+                               ttlMs=600000, maxBytes=65536, productionTimeoutMs=60000)
+        stage(limited, capacity)
+        waiter = {}
+
+        def wait_for_terminal():
+            status, headers, body = request('POST', '/origin-test', {
+                'operation': 'acquire', 'key': 'capacity-second', 'fingerprint': 'fixture-v1',
+                'ttlMs': 600000, 'maxBytes': 65536, 'productionTimeoutMs': 60000,
+            })
+            waiter.update(status=status, headers=headers, body=json.loads(body))
+
+        thread = threading.Thread(target=wait_for_terminal)
+        thread.start()
+        time.sleep(0.2)
+        operation(507, operation='commit', resourceId=limited['resourceId'],
+                  generation=limited['generation'], entrypoint='artifact.ts')
+        thread.join(timeout=5)
+        assert not thread.is_alive(), 'equivalent caller remained blocked after storage_limit'
+        assert waiter['status'] in (202, 502), waiter
+        if waiter['status'] == 502:
+            assert waiter['body']['state'] == 'failed'
+            assert waiter['body']['failureKind'] == 'storage_limit'
+            assert 'location' not in waiter['headers']
+        else:
+            assert waiter['body']['state'] == 'pending'
+            assert waiter['body']['generation'] != limited['generation']
+
         # Verify physical trash removal after healthy expiry, independently of REST state.
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
@@ -258,6 +295,7 @@ def main():
                    'checks': ['202/307/404', 'GET/206/416/304', 'parent-child expiry',
                               'terminal GC to 404', 'terminal catalog removal',
                               'autonomous expiry', 'trash removal', 'restart preservation',
+                              'storage_limit 507 and non-blocking equivalent caller',
                               'process-kill restart preservation']}
         (work / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
         print(json.dumps(receipt, indent=2))

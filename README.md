@@ -83,6 +83,13 @@ The producer writes only beneath `stagingDir`, closes every file, and then
 submits the entrypoint. `commit` discovers all members itself; callers never
 supply a member list.
 
+After a valid current generation is identified, terminal commit errors retire
+that generation immediately. Equivalent waiters receive the failed descriptor
+with the sanitized failure kind. The direct caller keeps its original error;
+`storage_limit` remains a capacity error, while ready-path inspection, rename,
+and catalog persistence failures map to `publication_failed` for the failed
+descriptor. After collection, the next acquire creates a fresh generation.
+
 ```json
 {
   "operation": "commit",

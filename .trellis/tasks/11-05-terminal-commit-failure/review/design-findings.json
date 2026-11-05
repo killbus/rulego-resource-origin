@@ -1,0 +1,18 @@
+{
+  "done": true,
+  "verdict": "PASS",
+  "round": 2,
+  "criteria": {
+    "D1": "met",
+    "D2": "met",
+    "D3": "met",
+    "D4": "met",
+    "D5": "met",
+    "D6": "met",
+    "D7": "met",
+    "D8": "met"
+  },
+  "blocking_findings": [],
+  "assumptions_for_human_review": [],
+  "escalation_reason": ""
+}

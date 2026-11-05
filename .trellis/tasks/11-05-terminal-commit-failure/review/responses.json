@@ -1,0 +1,34 @@
+{
+  "round": 1,
+  "verdict": "accepted",
+  "responses": [
+    {
+      "id": "NB-1",
+      "status": "accepted",
+      "reason": "The runtime e2e intentionally accepts either the terminal failed descriptor or a fresh pending generation. Deterministic waiter delivery is covered by the unit test with the observedContext barrier; the runtime test proves the caller is not blocked. No code change required."
+    },
+    {
+      "id": "NB-2",
+      "status": "accepted",
+      "reason": "The terminalization cleanup error is deliberately discarded so the original commit error remains the caller-visible cause. Cleanup retry diagnostics retain the cleanup failure. No behavior change required."
+    },
+    {
+      "id": "NB-3",
+      "status": "accepted",
+      "reason": "Linux CI remains the authoritative race gate. Local Windows cgo/TSan linking is unavailable and is not treated as proof."
+    },
+    {
+      "id": "NB-4",
+      "status": "accepted",
+      "reason": "The runtime e2e sleep only improves the chance that the waiter binds; unit tests provide the deterministic binding barrier. The runtime assertion is tolerant and not flake-prone."
+    }
+  ],
+  "local_validation": {
+    "gofmt_changed_go_files": "pass",
+    "go_vet": "pass",
+    "go_test": "pass on rerun; the first full run hit an unrelated Windows TempDir cleanup flake",
+    "go_test_race": "not run locally; Windows CGO/TSan link unavailable, Linux CI required",
+    "python_syntax": "pass",
+    "docker_e2e": "not run locally; Docker unavailable"
+  }
+}
