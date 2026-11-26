@@ -67,6 +67,20 @@ Acquire reserves one deterministic resource identity for `key` plus
 `generation`, and `stagingDir` on the `Produce` relation. Equivalent concurrent
 callers wait for the same generation and receive its terminal result.
 
+The winning acquire's context owns that production generation. Canceling it
+retires the pending generation with `failureKind: producer_canceled`, wakes
+equivalent waiters, and lets a subsequent acquire start a fresh generation.
+Canceling a waiter does not cancel the producer. Commit and cancellation are
+serialized: a successful commit survives later cancellation; a canceled
+generation rejects a later commit as `stale_generation`.
+
+Keep `acquire → Produce → producer → commit/fail` within one active execution.
+For synchronous HTTP routes this means production finishes before the response;
+returning a pending lease and committing from a later request is not a supported
+handoff, since HTTP completion cancels the owning context. Context-free callers
+remain bounded by `productionTimeoutMs`. Producers must still honor cancellation;
+the manager retires publication rights and does not stop or join producer code.
+
 ```json
 {
   "operation": "acquire",

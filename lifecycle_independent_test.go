@@ -137,8 +137,10 @@ func independentRequest(key string) acquireRequest {
 
 func independentAcquire(t *testing.T, m *originManager, request acquireRequest) resourceDescriptor {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+	// The lease belongs to this context until publication, not just until
+	// Acquire returns. Keep it alive for the caller's production steps.
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
 	result, err := m.Acquire(ctx, request)
 	if err != nil || !result.Produce {
 		t.Fatalf("fixture acquire: %#v %v", result, err)

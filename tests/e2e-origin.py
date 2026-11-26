@@ -4,10 +4,13 @@
 import argparse
 import hashlib
 import http.client
+import http.server
 import io
 import json
 from pathlib import Path
 import re
+import queue
+import socket
 import shutil
 import subprocess
 import tarfile
@@ -67,6 +70,38 @@ def main():
     }
     pool = work / 'node_pool.json'
     pool.write_text(json.dumps(owner), encoding='utf-8')
+    # Keep the winning HTTP execution alive through production and commit.
+    # Returning 202 and committing on a later request would cancel the owner.
+    leases = queue.Queue()
+    gates = {}
+    gates_lock = threading.Lock()
+
+    class Producer(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            lease = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+            gate = {'lease': lease, 'release': threading.Event(), 'result': None}
+            with gates_lock:
+                gates[lease['generation']] = gate
+            leases.put(gate)
+            if not gate['release'].wait(30):
+                self.send_error(504)
+                return
+            payload = json.dumps(gate['result']).encode()
+            try:
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+        def log_message(self, *_):
+            pass
+
+    producer_server = http.server.ThreadingHTTPServer(('0.0.0.0', 0), Producer)
+    producer_thread = threading.Thread(target=producer_server.serve_forever, daemon=True)
+    producer_thread.start()
     chain = {
         'ruleChain': {'id': 'origin-http-test', 'name': 'Origin HTTP contract', 'root': True},
         'metadata': {
@@ -84,11 +119,24 @@ def main():
             'nodes': [
                 {'id': 'origin', 'type': 'resourceOrigin',
                  'configuration': {'root': 'ref://resource-origin'}},
+                {'id': 'producer', 'type': 'restApiCall', 'configuration': {
+                    'restEndpointUrlPattern': 'http://host.docker.internal:' + str(producer_server.server_port),
+                    'requestMethod': 'POST', 'readTimeoutMs': 30000,
+                }},
+                {'id': 'terminal', 'type': 'resourceOrigin',
+                 'configuration': {'root': 'ref://resource-origin'}},
                 {'id': 'end', 'type': 'end'},
             ],
             'connections': [
+                {'fromId': 'origin', 'toId': 'producer', 'type': 'Produce'},
+                {'fromId': 'producer', 'toId': 'terminal', 'type': 'Success'},
+                {'fromId': 'producer', 'toId': 'end', 'type': 'Failure'},
+            ] + [
                 {'fromId': 'origin', 'toId': 'end', 'type': relation}
-                for relation in ('Produce', 'Success', 'Failure')
+                for relation in ('Success', 'Failure')
+            ] + [
+                {'fromId': 'terminal', 'toId': 'end', 'type': relation}
+                for relation in ('Success', 'Failure')
             ],
         },
     }
@@ -127,7 +175,31 @@ def main():
         raise AssertionError('runtime did not become ready')
 
     def operation(expected, **body):
-        status, headers, payload = request('POST', '/origin-test', body)
+        if body['operation'] == 'acquire' and expected == 202:
+            # Wait for proof that the actual graph entered Produce, rather than
+            # assuming a background request has reserved the resource already.
+            connection = http.client.HTTPConnection('127.0.0.1', port, timeout=30)
+            connection.request('POST', '/origin-test', json.dumps(body), {'Content-Type': 'application/json'})
+            gate = leases.get(timeout=5)
+            gate['connection'] = connection
+            pending, _ = operation(202, operation='resolve', resourceId=gate['lease']['resourceId'])
+            assert pending['state'] == 'pending' and 'generation' not in pending
+            return gate['lease'], {}
+        if body['operation'] in ('commit', 'fail'):
+            with gates_lock:
+                gate = gates.pop(body['generation'])
+            gate['result'] = body
+            gate['release'].set()
+            connection = gate['connection']
+            try:
+                response = connection.getresponse()
+                status = response.status
+                headers = dict((k.lower(), v) for k, v in response.getheaders())
+                payload = response.read()
+            finally:
+                connection.close()
+        else:
+            status, headers, payload = request('POST', '/origin-test', body)
         assert status == expected, (status, expected, payload)
         return json.loads(payload), headers
 
@@ -162,6 +234,7 @@ def main():
 
     try:
         docker('create', '--name', name, '--platform', platform,
+               '--add-host', 'host.docker.internal:host-gateway',
                '-p', '127.0.0.1::9090', '-v', str(data_dir) + ':/app/data',
                '-v', str(config) + ':/app/config.conf:ro',
                '-v', str(pool) + ':/app/node_pool.json:ro', runtime)
@@ -171,6 +244,51 @@ def main():
         status, _, body = request('POST', '/api/v1/rules/origin-http-test', chain)
         assert status in (200, 201), (status, body)
         operation(404, operation='resolve', resourceId='0' * 64)
+        canceled_request = dict(operation='acquire', key='disconnected-producer', fingerprint='fixture-v1',
+                                ttlMs=600000, maxBytes=65536, productionTimeoutMs=60000)
+        canceled, _ = operation(202, **canceled_request)
+        waiting = {}
+
+        def await_canceled_production():
+            try:
+                status, headers, body = request('POST', '/origin-test', canceled_request)
+                waiting.update(status=status, headers=headers, body=json.loads(body))
+            except Exception as exc:
+                waiting['error'] = repr(exc)
+
+        waiting_thread = threading.Thread(target=await_canceled_production, daemon=True)
+        waiting_thread.start()
+        # Unit tests use a binding barrier; here allow the native endpoint to
+        # attach, and require its terminal 502 rather than accepting a retry.
+        time.sleep(0.2)
+        with gates_lock:
+            canceled_gate = gates[canceled['generation']]
+        started = time.monotonic()
+        canceled_gate['connection'].sock.shutdown(socket.SHUT_RDWR)
+        canceled_gate['connection'].close()
+        waiting_thread.join(timeout=5)
+        assert not waiting_thread.is_alive(), 'disconnect left waiter pending'
+        assert waiting.get('status') == 502, waiting
+        assert waiting['body']['failureKind'] == 'producer_canceled', waiting
+        assert 'location' not in waiting['headers']
+        retried, _ = operation(202, **canceled_request)
+        assert retried['generation'] != canceled['generation']
+        # Let the old graph finish after replacement. Its late successor must
+        # not retire the new generation, even if RuleGo suppresses that edge.
+        canceled_gate['result'] = dict(operation='fail', resourceId=canceled['resourceId'],
+                                       generation=canceled['generation'], kind='late_producer')
+        canceled_gate['release'].set()
+        with gates_lock:
+            del gates[canceled['generation']]
+        stage(retried)
+        recovered, _ = operation(307, operation='commit', resourceId=retried['resourceId'],
+                                 generation=retried['generation'], entrypoint='artifact.ts')
+        assert request('GET', recovered['url'])[2] == payload
+        disconnect_recovery_seconds = time.monotonic() - started
+        assert disconnect_recovery_seconds < 15, disconnect_recovery_seconds
+        # Normal request completion also cancels context; a committed result
+        # must remain ready for subsequent readers.
+        operation(307, operation='resolve', resourceId=recovered['resourceId'])
         stable = publish('restart-preserved', 600000)
         location = stable['url']
         status, headers, body = request('GET', location)
@@ -291,15 +409,29 @@ def main():
         assert resolved['url'] == location
         assert request('GET', location)[2] == payload
         receipt = {'runtime': runtime, 'platform': platform, 'pluginSha256': digest,
+                   'disconnectRecoverySeconds': disconnect_recovery_seconds,
                    'observedTerminalStatuses': sorted(terminal_statuses),
                    'checks': ['202/307/404', 'GET/206/416/304', 'parent-child expiry',
                               'terminal GC to 404', 'terminal catalog removal',
                               'autonomous expiry', 'trash removal', 'restart preservation',
                               'storage_limit 507 and non-blocking equivalent caller',
+                              'producer HTTP disconnect wakes waiter with 502',
+                              'fresh generation and commit after disconnect',
+                              'ready survives owner HTTP completion',
                               'process-kill restart preservation']}
         (work / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
         print(json.dumps(receipt, indent=2))
     finally:
+        with gates_lock:
+            for gate in gates.values():
+                gate['result'] = {'operation': 'fail', 'resourceId': gate['lease']['resourceId'],
+                                  'generation': gate['lease']['generation'], 'kind': 'fixture_teardown'}
+                gate['release'].set()
+                if 'connection' in gate:
+                    gate['connection'].close()
+        producer_server.shutdown()
+        producer_server.server_close()
+        producer_thread.join(timeout=5)
         if created:
             try:
                 logs = subprocess.run(['docker', 'logs', name], stdout=subprocess.PIPE,
