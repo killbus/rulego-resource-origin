@@ -150,8 +150,9 @@ type originManager struct {
 }
 
 type publicationWaiter struct {
-	done   chan struct{}
-	result resourceDescriptor
+	done           chan struct{}
+	result         resourceDescriptor
+	stopProduction func() bool
 }
 
 func newOriginManager(config managerConfig) (*originManager, error) {
@@ -229,7 +230,14 @@ func newOriginManager(config managerConfig) (*originManager, error) {
 }
 
 func (m *originManager) Close() error {
-	m.closeOnce.Do(func() { close(m.stop) })
+	m.closeOnce.Do(func() {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		close(m.stop)
+		for _, wait := range m.waiters {
+			wait.stopWatchingProduction()
+		}
+	})
 	<-m.done
 	return nil
 }
@@ -313,6 +321,10 @@ func (m *originManager) Acquire(ctx context.Context, request acquireRequest) (ac
 			m.mu.Unlock()
 			return acquireResult{}, problem("conflict", "retired ready path awaits cleanup")
 		}
+		if err := ctx.Err(); err != nil {
+			m.mu.Unlock()
+			return acquireResult{}, &originError{Kind: "producer_canceled", Err: err}
+		}
 		if err := m.validateParentLocked(request.ParentResourceID, now); err != nil {
 			m.mu.Unlock()
 			return acquireResult{}, err
@@ -345,11 +357,30 @@ func (m *originManager) Acquire(ctx context.Context, request acquireRequest) (ac
 			return acquireResult{}, err
 		}
 		m.records[id] = record
-		m.waiters[id] = &publicationWaiter{done: make(chan struct{})}
+		wait := &publicationWaiter{done: make(chan struct{})}
+		m.waiters[id] = wait
+		// The winning caller owns production beyond Acquire's return. Register
+		// before dispatching Produce, since canceled graphs may skip fail nodes.
+		wait.stopProduction = context.AfterFunc(ctx, func() { m.cancelProduction(record) })
 		descriptor := m.descriptor(record, "")
 		m.mu.Unlock()
 		m.signal()
 		return acquireResult{Descriptor: descriptor, Produce: true}, nil
+	}
+}
+
+func (m *originManager) cancelProduction(record *originRecord) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	select {
+	case <-m.stop:
+		return
+	default:
+	}
+	// A callback may already be running when commit/fail stops it. Never let
+	// that late callback retire committed data or a replacement generation.
+	if m.records[record.ResourceID] == record && record.State == statePending {
+		_ = m.failLocked(record, "producer_canceled")
 	}
 }
 
@@ -605,9 +636,17 @@ func (m *originManager) expireLocked(record *originRecord, now time.Time) error 
 
 func (m *originManager) notifyLocked(record *originRecord) {
 	if wait := m.waiters[record.ResourceID]; wait != nil {
+		wait.stopWatchingProduction()
 		wait.result = m.descriptor(record, "")
 		close(wait.done)
 		delete(m.waiters, record.ResourceID)
+	}
+}
+
+func (wait *publicationWaiter) stopWatchingProduction() {
+	if wait.stopProduction != nil {
+		wait.stopProduction()
+		wait.stopProduction = nil
 	}
 }
 
